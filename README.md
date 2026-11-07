@@ -16,3 +16,5 @@ Exit codes: 0 for no errors, 1 for audit findings, 2 for invalid CLI arguments. 
 Contract reference: [DeepSeek package manifest types](https://github.com/deepseek-ai/deepseek-harness/blob/fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159/packages/util/package-manifest/src/types.ts), inspected 2026-11-07. DSH is evolving; unsupported declarations are reported conservatively.
 
 Development was assisted by Codex. Tests and limitations are part of the repository so results can be reproduced.
+
+To catch files that exist locally but are omitted from publication, run `npm pack --dry-run --json --ignore-scripts` in the plugin directory and save its JSON output outside that directory. Pass it with `--packlist /path/to/pack.json`. Build the plugin first: lifecycle scripts are deliberately not run by the audit. The report must match the package name and version; regenerate it after changes. A supplied report can be stale, so this is not a verification of an already-published tarball.
