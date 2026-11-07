@@ -5,6 +5,7 @@ import { checkPatches } from './patches.mjs'
 import { checkEntries } from './entries.mjs'
 import { checkIcon } from './icons.mjs'
 import { checkPacklist } from './packlist.mjs'
+import { checkCompatibility } from './compatibility.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -55,6 +56,7 @@ export function audit(directory, options = {}) {
   checkPatches({ manifest, checkFile, add })
   checkEntries({ manifest, checkFile, add })
   checkIcon({ manifest, checkFile, add })
+  checkCompatibility({ manifest, add }, options)
   checkPacklist({ manifest, references, add }, options.packlist)
   return { ...finish(root, manifest.name ?? null, findings), references }
 }

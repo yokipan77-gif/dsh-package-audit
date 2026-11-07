@@ -9,9 +9,10 @@ export function parseArgs(args) {
       seen.add(arg)
       if (arg === '--help') options.help = true
       else if (arg === '--json') options.json = true
-      else if (arg === '--packlist') {
-        if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error('--packlist requires a JSON report path')
-        options.packlist = args[++i]
+      else if (['--packlist', '--dsh-version', '--platform'].includes(arg)) {
+        if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
+        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform' }[arg]
+        options[key] = args[++i]
       } else throw new Error(`Unknown option ${arg}`)
     } else {
       if (directorySeen) throw new Error('Supply one package directory')

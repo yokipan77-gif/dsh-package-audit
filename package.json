@@ -26,6 +26,7 @@
     "url": "https://github.com/yokipan77-gif/dsh-package-audit.git"
   },
   "dependencies": {
+    "semver": "7.8.6",
     "yaml": "2.9.1"
   }
 }
