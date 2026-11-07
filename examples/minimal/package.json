@@ -1,0 +1,11 @@
+{
+  "name": "dsh-audit-example",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "main": "index.mjs",
+  "icon": "assets/icon.svg",
+  "files": ["index.mjs", "cordis.patch.yml", "assets"],
+  "engines": { "dsh": ">=0.2.1 <0.3" },
+  "dsh": { "bundle": { "patch": "cordis.patch.yml" } }
+}

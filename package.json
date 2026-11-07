@@ -11,11 +11,13 @@
     "bin",
     "src",
     "README.md",
+    "README.zh.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test",
-    "check": "node --check bin/audit.mjs && node --test"
+    "test": "node --test \"test/*.test.mjs\"",
+    "smoke": "node scripts/release-smoke.mjs",
+    "check": "node --check bin/audit.mjs && npm test && npm run smoke"
   },
   "engines": {
     "node": ">=22.17.0"

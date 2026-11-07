@@ -18,7 +18,7 @@ export function auditWorkspace(directory, options = {}) {
       throw new Error('Declare non-empty npm workspace path patterns inside this repository; parent paths, absolute paths and exclusions are not supported.')
     }
     const seen = new Set()
-    for (const pattern of patterns) {
+    scan: for (const pattern of patterns) {
       const matches = fs.globSync(pattern.replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json', {
         cwd: root, exclude: ['**/node_modules/**', '**/.git/**'],
       })
@@ -27,7 +27,10 @@ export function auditWorkspace(directory, options = {}) {
           const resolved = packageFile(root, file).absolute
           if (seen.has(resolved)) continue
           seen.add(resolved)
-          if (seen.size > 2000) throw new Error('Workspace exceeds the 2000-package audit limit.')
+          if (seen.size > 2000) {
+            fail('Workspace exceeds the 2000-package audit limit.')
+            break scan
+          }
           if (fs.statSync(resolved).size > 1024 * 1024) throw new Error('Member package.json exceeds 1 MiB.')
           let member
           try { member = JSON.parse(fs.readFileSync(resolved, 'utf8').replace(/^\uFEFF/, '')) } catch {
