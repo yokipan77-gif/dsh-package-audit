@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { packageFile } from './files.mjs'
+import { checkPatches } from './patches.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -43,13 +44,12 @@ export function audit(directory, options = {}) {
     const patches = Array.isArray(patch) ? patch : [patch]
     if (!patches.length || patches.some(item => typeof item !== 'string' || !item.trim())) {
       add('bundle.patch', 'dsh.bundle.patch must be a non-empty path or ordered array of paths.')
-    } else {
-      for (const patchPath of patches) checkFile(patchPath, 'dsh.bundle.patch')
     }
   }
   if (manifest.dsh?.manifestVersion !== undefined && manifest.dsh.manifestVersion !== 1) {
     add('manifest.future', 'Unknown dsh.manifestVersion: this auditor understands version 1. Check the host contract.', 'package.json', 'warning')
   }
+  checkPatches({ manifest, checkFile, add })
   return { ...finish(root, manifest.name ?? null, findings), references }
 }
 
