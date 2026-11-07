@@ -9,6 +9,7 @@ export function parseArgs(args) {
       seen.add(arg)
       if (arg === '--help') options.help = true
       else if (arg === '--json') options.json = true
+      else if (arg === '--workspace') options.workspace = true
       else if (['--packlist', '--dsh-version', '--platform'].includes(arg)) {
         if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
         const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform' }[arg]
