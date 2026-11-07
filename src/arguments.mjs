@@ -10,6 +10,8 @@ export function parseArgs(args) {
       if (arg === '--help') options.help = true
       else if (arg === '--json') options.json = true
       else if (arg === '--workspace') options.workspace = true
+      else if (arg === '--sarif') options.sarif = true
+      else if (arg === '--fail-on-warning') options.failOnWarning = true
       else if (['--packlist', '--dsh-version', '--platform'].includes(arg)) {
         if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
         const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform' }[arg]
@@ -21,5 +23,6 @@ export function parseArgs(args) {
       directorySeen = true
     }
   }
+  if (options.json && options.sarif) throw new Error('Choose either --json or --sarif')
   return options
 }
