@@ -1,5 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { auditWorkspace } from '../src/workspaces.mjs'
 import { fixture } from './helpers.mjs'
 
@@ -18,6 +20,28 @@ test('reports malformed members rather than dropping them from the result', t =>
   const f = fixture(t, { workspaces: { packages: ['packages/*'] } })
   f.write('packages/broken/package.json', '{')
   assert.equal(auditWorkspace(f.root).packages[0].findings[0].code, 'manifest.read')
+})
+
+test('non-object member manifests fail workspace reports and the CLI', t => {
+  const f = fixture(t, { workspaces: ['packages/*'] })
+  f.write('packages/good/package.json', JSON.stringify(f.manifest))
+  f.write('packages/good/cordis.patch.yml', '[]')
+  f.write('packages/library/package.json', '{"name":"helper"}')
+  const invalid = [null, [], 'plugin', 42, true]
+  for (const [i, value] of invalid.entries()) {
+    f.write(`packages/invalid-${i}/package.json`, JSON.stringify(value))
+  }
+  const report = auditWorkspace(f.root)
+  assert.equal(report.ok, false)
+  assert.equal(report.packages.length, invalid.length + 1)
+  const rejected = report.packages.filter(pkg => !pkg.ok)
+  assert.equal(rejected.length, invalid.length)
+  for (const pkg of rejected) assert.equal(pkg.findings[0].code, 'manifest.object')
+
+  const cli = fileURLToPath(new URL('../bin/audit.mjs', import.meta.url))
+  const result = spawnSync(process.execPath, [cli, f.root, '--workspace', '--json'], { encoding: 'utf8' })
+  assert.equal(result.status, 1, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), report)
 })
 test('fails empty workspace discovery and rejects parent-directory patterns', t => {
   const f = fixture(t, { workspaces: ['packages/*'] })

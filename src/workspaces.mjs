@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { audit } from './audit.mjs'
+import { audit, isObject } from './audit.mjs'
 import { packageFile } from './files.mjs'
 
 /** Audit DSH members of declared npm workspaces, without traversing dependencies. */
@@ -37,7 +37,8 @@ export function auditWorkspace(directory, options = {}) {
             packages.push(audit(path.dirname(resolved), options))
             continue
           }
-          if (member?.dsh !== undefined) packages.push(audit(path.dirname(resolved), options))
+          // Invalid manifests must reach validation, not the ordinary-library filter.
+          if (!isObject(member) || member.dsh !== undefined) packages.push(audit(path.dirname(resolved), options))
         } catch (error) { fail(error.message, file.split(path.sep).join('/')) }
       }
     }
