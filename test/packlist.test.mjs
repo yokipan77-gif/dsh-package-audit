@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import path from 'node:path'
+import fs from 'node:fs'
 import { audit } from '../src/audit.mjs'
 import { parseArgs } from '../src/arguments.mjs'
 import { fixture } from './helpers.mjs'
@@ -25,4 +26,24 @@ test('CLI rejects incomplete and duplicated pack report options', () => {
   assert.throws(() => parseArgs(['--packlist', '--json']))
   assert.throws(() => parseArgs(['--json', '--json']))
   assert.deepEqual(parseArgs(['plugin', '--packlist', 'pack.json']).packlist, 'pack.json')
+})
+
+test('flags stale artifact sizes without claiming to authenticate a supplied report', t => {
+  const f = fixture(t)
+  const report = { name: f.manifest.name, version: f.manifest.version, files: [{ path: 'package.json' }, { path: 'cordis.patch.yml', size: fs.statSync(path.join(f.root, 'cordis.patch.yml')).size }] }
+  const options = { packlist: path.join(f.root, 'pack.json') }
+  f.write('pack.json', JSON.stringify([report]))
+  assert.equal(audit(f.root, options).findings.length, 0)
+  f.write('cordis.patch.yml', '[]')
+  const result = audit(f.root, options)
+  assert.equal(result.ok, true)
+  assert.equal(result.findings[0].code, 'pack.stale')
+})
+
+test('rejects duplicate paths and malformed sizes in pack reports', t => {
+  const f = fixture(t)
+  for (const files of [[{ path: 'package.json' }, { path: './package.json' }], [{ path: 'package.json', size: -1 }]]) {
+    f.write('pack.json', JSON.stringify([{ name: f.manifest.name, version: f.manifest.version, files }]))
+    assert.equal(audit(f.root, { packlist: path.join(f.root, 'pack.json') }).findings[0].code, 'pack.report')
+  }
 })

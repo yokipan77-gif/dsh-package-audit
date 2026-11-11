@@ -1,6 +1,7 @@
 import fs from 'node:fs'
+import path from 'node:path'
 
-export function checkPacklist({ manifest, references, add }, packlist) {
+export function checkPacklist({ root, manifest, references, add }, packlist) {
   if (!packlist) return
   try {
     if (fs.statSync(packlist).size > 8 * 1024 * 1024) throw new Error('Pack report exceeds 8 MiB.')
@@ -15,8 +16,17 @@ export function checkPacklist({ manifest, references, add }, packlist) {
       throw new Error('Pack report contains an absolute or parent-traversing path.')
     }
     const shipped = new Set(files.map(row => normalize(row.path)))
+    if (shipped.size !== files.length) throw new Error('Pack report repeats a file path; regenerate the report with npm.')
+    if (files.some(row => row.size !== undefined && (!Number.isSafeInteger(row.size) || row.size < 0))) throw new Error('Pack report file sizes must be non-negative integers.')
+    const sizes = new Map(files.map(row => [normalize(row.path), row.size]))
+    const checked = new Set()
     for (const { file, field } of [{ file: 'package.json', field: 'manifest' }, ...references]) {
+      if (checked.has(file)) continue
+      checked.add(file)
       if (!shipped.has(file)) add('pack.missing', `${field} references ${file}, but it is absent from npm's pack report. Check files/.npmignore and rebuild before packing.`, file)
+      else if (file !== 'package.json' && sizes.get(file) !== undefined && fs.statSync(path.join(root, file)).size !== sizes.get(file)) {
+        add('pack.stale', `Local size of ${file} differs from the pack report. Regenerate the report after rebuilding.`, file, 'warning')
+      }
     }
   } catch (error) {
     add('pack.report', `Cannot validate packed files: ${error.message}`)

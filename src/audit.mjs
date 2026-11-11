@@ -63,7 +63,7 @@ export function audit(directory, options = {}) {
   checkEntries({ root, manifest, checkFile, add })
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
-  checkPacklist({ manifest, references, add }, options.packlist)
+  checkPacklist({ root, manifest, references, add }, options.packlist)
   return { ...finish(root, manifest.name ?? null, findings), references }
 }
 
