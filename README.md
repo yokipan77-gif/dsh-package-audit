@@ -36,7 +36,9 @@ Generate pack reports only from code you trust: npm 10 may run `prepare` even wi
 
 ## Validation and limits
 
-`npm run check` runs behavior tests and a real, offline npm pack smoke test. The smoke test verifies a good fixture, reproduces an omitted patch, checks the auditor's own distribution and asserts that lifecycle scripts did not run. CI covers Node 22/24 on Windows and Linux.
+`npm run check` runs behavior tests and an offline release smoke test. It audits a good fixture, reproduces an omitted patch, checks that the audit does not run lifecycle scripts, then packs and installs the auditor into an isolated temporary directory. The installed CLI must produce JSON, SARIF and Markdown reports. CI covers Node 22/24 on Windows and Linux; dependencies must already be in npm's cache (`npm ci` fills it).
+
+Use `--markdown --output audit.md` to attach a summary to a PR, or `--json --output audit.json` / `--sarif --output audit.sarif` for automation. Reports are atomically written as UTF-8; existing audited inputs are protected from overwrite. The destination directory must exist. Raster icon checks recognize PNG/JPEG/WebP signatures; they do not fully decode images. Pack reports with differing local artifact sizes produce `pack.stale` warnings, not proof that an arbitrary report is authentic.
 
 This CLI is not published to npm yet. Use this checkout. It does not model the full Cordis composer, profile compatibility exemptions or runtime behavior. Export wildcard artifacts are enumerated; fallback arrays remain explicitly unverified. Workspace discovery supports package.json arrays and `{ packages: [...] }`, including `!` exclusions. When npm workspaces are absent, it reads `packages` from [pnpm-workspace.yaml](https://pnpm.io/pnpm-workspace_yaml); pnpm catalogs/settings are not interpreted. Limits: manifest/patch/workspace YAML 1 MiB, pack report 8 MiB, 2000 workspace members. JSON reports include absolute local root paths; SARIF artifact locations are relative.
 

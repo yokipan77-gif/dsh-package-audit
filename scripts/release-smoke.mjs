@@ -46,7 +46,29 @@ try {
   for (const file of ['bin/audit.mjs', 'src/audit.mjs', 'src/workspaces.mjs', 'src/sarif.mjs', 'LICENSE']) {
     assert.ok(own.files.some(entry => entry.path === file), `Auditor package omits ${file}`)
   }
-  console.log('Release smoke passed: valid artifact, omitted patch, audit executes no scripts, auditor package contents.')
+  const packed = spawnSync(process.execPath, [npmCli, 'pack', '--json', '--ignore-scripts', '--offline', '--pack-destination', temporary], {
+    cwd: project, encoding: 'utf8', timeout: 30_000,
+  })
+  assert.equal(packed.status, 0, packed.stderr || packed.error?.message)
+  const archive = path.join(temporary, JSON.parse(packed.stdout)[0].filename)
+  const installedRoot = path.join(temporary, 'installation')
+  const installed = spawnSync(process.execPath, [npmCli, 'install', '--prefix', installedRoot, '--ignore-scripts', '--offline', '--no-audit', '--no-fund', archive], {
+    cwd: temporary, encoding: 'utf8', timeout: 60_000,
+  })
+  assert.equal(installed.status, 0, installed.stderr || installed.error?.message)
+  manifest.files = ['index.mjs', 'assets', 'cordis.patch.yml']
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+  const installedCli = path.join(installedRoot, 'node_modules', '@yokipan77', 'dsh-package-audit', 'bin', 'audit.mjs')
+  for (const format of ['--json', '--sarif', '--markdown']) {
+    const output = path.join(temporary, `installed-${format.slice(2)}.txt`)
+    const result = spawnSync(process.execPath, [installedCli, sample, format, '--output', output], { encoding: 'utf8', timeout: 10_000 })
+    assert.equal(result.status, 0, result.stderr)
+    const text = fs.readFileSync(output, 'utf8')
+    if (format === '--json') assert.equal(JSON.parse(text).ok, true)
+    if (format === '--sarif') assert.equal(JSON.parse(text).version, '2.1.0')
+    if (format === '--markdown') assert.ok(text.includes('No findings.'))
+  }
+  console.log('Release smoke passed: packlist, omitted patch, script-free audit, offline tarball installation and installed CLI in three report formats.')
 } finally {
   const resolved = path.resolve(temporary)
   assert.ok(path.dirname(resolved) === path.resolve(os.tmpdir()) && path.basename(resolved).startsWith('dsh-release-smoke-'))

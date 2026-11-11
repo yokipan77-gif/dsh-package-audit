@@ -38,11 +38,14 @@ npm pack --dry-run --json --ignore-scripts > ../plugin-pack.json
 node bin/audit.mjs ../your-plugin --packlist ../plugin-pack.json --json
 node bin/audit.mjs ../monorepo --workspace --json
 node bin/audit.mjs ../your-plugin --sarif > findings.sarif
+node bin/audit.mjs ../your-plugin --markdown --output audit.md
 ```
 
 清单应保存在被检查包的目录之外，并在任何改动后重新生成。工具检查包名和版本是否匹配，但无法证明外部清单没有过期。先自行构建；仅对可信代码使用 npm pack，npm 10 即使带 `--ignore-scripts` 也可能执行 `prepare`。本工具只读取已有报告，不会调用 npm。
 
-退出码：0 无错误；1 检查发现问题；2 参数错误。`--fail-on-warning` 可让警告也返回 1，普通 note 不会触发。
+退出码：0 无错误；1 检查发现问题；2 参数或报告保存错误。`--fail-on-warning` 可让警告也返回 1，普通 note 不会触发。`--output` 原子写入 UTF-8 文件，避免 Windows 重定向编码差异；输出目录必须已存在，并保护已有的审计输入不被覆盖。
+
+图片检查会识别 PNG/JPEG/WebP 文件头，但不执行完整图片解码。本地文件大小与 pack 报告不符时产生 `pack.stale` 警告；这不能证明报告真实。发布验证还会在临时目录中离线安装实际 tarball，再运行安装后的 CLI，检查 JSON、SARIF 和 Markdown 三种报告；依赖缓存由之前的 npm ci 提供。
 
 ## 范围与限制
 
