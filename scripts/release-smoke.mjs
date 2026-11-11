@@ -50,9 +50,25 @@ try {
     cwd: project, encoding: 'utf8', timeout: 30_000,
   })
   assert.equal(packed.status, 0, packed.stderr || packed.error?.message)
-  const archive = path.join(temporary, JSON.parse(packed.stdout)[0].filename)
+  const distribution = JSON.parse(packed.stdout)[0]
   const installedRoot = path.join(temporary, 'installation')
-  const installed = spawnSync(process.execPath, [npmCli, 'install', '--prefix', installedRoot, '--ignore-scripts', '--offline', '--no-audit', '--no-fund', archive], {
+  fs.mkdirSync(installedRoot)
+  const packageMetadata = JSON.parse(fs.readFileSync(path.join(project, 'package.json'), 'utf8'))
+  const archiveSpec = `file:../${distribution.filename}`
+  const installation = { name: 'dsh-audit-release-test', version: '1.0.0', private: true, dependencies: { [packageMetadata.name]: archiveSpec } }
+  const lock = JSON.parse(fs.readFileSync(path.join(project, 'package-lock.json'), 'utf8'))
+  lock.name = installation.name
+  lock.version = installation.version
+  lock.packages[''] = installation
+  lock.packages[`node_modules/${packageMetadata.name}`] = {
+    version: packageMetadata.version, resolved: archiveSpec, integrity: distribution.integrity,
+    dependencies: packageMetadata.dependencies, bin: packageMetadata.bin, engines: packageMetadata.engines,
+  }
+  fs.writeFileSync(path.join(installedRoot, 'package.json'), JSON.stringify(installation))
+  fs.writeFileSync(path.join(installedRoot, 'package-lock.json'), JSON.stringify(lock))
+  // npm ci caches tarballs, not necessarily packuments. Reuse exact locked
+  // dependency URLs/integrities so offline installation needs no metadata.
+  const installed = spawnSync(process.execPath, [npmCli, 'ci', '--prefix', installedRoot, '--ignore-scripts', '--offline', '--no-audit', '--no-fund'], {
     cwd: temporary, encoding: 'utf8', timeout: 60_000,
   })
   assert.equal(installed.status, 0, installed.stderr || installed.error?.message)
