@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 /** Resolve only regular files whose real path remains within the package. */
-export function packageFile(root, declared) {
+export function packagePath(root, declared) {
   if (typeof declared !== 'string' || !declared.trim()) throw new Error('Expected a non-empty relative file path.')
   if (/^[a-z][a-z\d+.-]*:/iu.test(declared) || /^[\\/]/u.test(declared) || /[\u0000-\u001f]/u.test(declared)) {
     throw new Error('Use a relative path within the package, not a URL or absolute path.')
@@ -14,6 +14,11 @@ export function packageFile(root, declared) {
     return rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)
   }
   if (!contains(path.resolve(root), target)) throw new Error('The path leaves the package directory.')
+  return { target, contains }
+}
+
+export function packageFile(root, declared) {
+  const { target, contains } = packagePath(root, declared)
   let real
   try { real = fs.realpathSync(target) } catch (error) {
     throw new Error(`File cannot be read (${error.code}). Build the artifact or correct the path.`)

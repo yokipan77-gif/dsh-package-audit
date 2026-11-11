@@ -1,6 +1,6 @@
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
-export function checkEntries({ manifest, checkFile, add }) {
+export function checkEntries({ root, manifest, checkFile, add }) {
   for (const key of ['main', 'module', 'types', 'typings']) {
     if (manifest[key] !== undefined) checkFile(manifest[key], key)
   }
@@ -13,7 +13,7 @@ export function checkEntries({ manifest, checkFile, add }) {
     if (typeof value === 'string') {
       if (!value.startsWith('./')) { add('entry.export', `${field} must be a package-relative ./ path or null.`); return }
       if (value.includes('*')) {
-        add('entry.pattern', `${field}: export pattern is not enumerated; verify the generated artifacts in the packed-file report.`, 'package.json', 'note')
+        checkExportPattern(root, value, field, checkFile, add)
       } else checkFile(value, field)
     } else if (Array.isArray(value)) {
       // Node permits a fallback list. Report each missing candidate as advisory,
@@ -37,3 +37,4 @@ export function checkEntries({ manifest, checkFile, add }) {
     if (client.immediately !== undefined && typeof client.immediately !== 'boolean') add('client.immediately', 'dsh.client.immediately must be a boolean.')
   }
 }
+import { checkExportPattern } from './export-patterns.mjs'

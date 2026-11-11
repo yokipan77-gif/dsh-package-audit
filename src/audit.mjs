@@ -60,7 +60,7 @@ export function audit(directory, options = {}) {
     add('manifest.future', 'Unknown dsh.manifestVersion: this auditor understands version 1. Check the host contract.', 'package.json', 'warning')
   }
   checkPatches({ manifest, checkFile, add })
-  checkEntries({ manifest, checkFile, add })
+  checkEntries({ root, manifest, checkFile, add })
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
   checkPacklist({ manifest, references, add }, options.packlist)
