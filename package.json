@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "semver": "7.8.6",
+    "validate-npm-package-name": "8.0.0",
     "yaml": "2.9.1"
   }
 }

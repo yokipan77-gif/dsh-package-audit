@@ -6,6 +6,7 @@ import { checkEntries } from './entries.mjs'
 import { checkIcon } from './icons.mjs'
 import { checkPacklist } from './packlist.mjs'
 import { checkCompatibility } from './compatibility.mjs'
+import validatePackageName from 'validate-npm-package-name'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -40,6 +41,11 @@ export function audit(directory, options = {}) {
   }
   for (const key of ['name', 'version']) {
     if (typeof manifest[key] !== 'string' || !manifest[key].trim()) add(`manifest.${key}`, `Declare a non-empty ${key} in package.json.`)
+  }
+  if (typeof manifest.name === 'string' && manifest.name.trim()) {
+    const name = validatePackageName(manifest.name)
+    if (!name.validForOldPackages) add('name.invalid', `Invalid npm package name: ${(name.errors ?? []).join('; ')}.`)
+    else if (!name.validForNewPackages) add('name.legacy', `Name is only valid for existing packages: ${(name.warnings ?? []).join('; ')}.`, 'package.json', 'warning')
   }
   if (!isObject(manifest.dsh) || !isObject(manifest.dsh.bundle)) {
     add('bundle.required', 'Declare dsh.bundle with its patch file; dsh.client alone is not an installable bundle.')
