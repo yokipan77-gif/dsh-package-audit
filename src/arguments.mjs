@@ -12,9 +12,9 @@ export function parseArgs(args) {
       else if (arg === '--workspace') options.workspace = true
       else if (arg === '--sarif') options.sarif = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
-      else if (['--packlist', '--dsh-version', '--platform'].includes(arg)) {
+      else if (['--packlist', '--dsh-version', '--platform', '--output'].includes(arg)) {
         if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
-        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform' }[arg]
+        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform', '--output': 'output' }[arg]
         options[key] = args[++i]
       } else throw new Error(`Unknown option ${arg}`)
     } else {
