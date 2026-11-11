@@ -48,7 +48,7 @@ node bin/audit.mjs ../your-plugin --sarif > findings.sarif
 
 - 不导入插件代码、不执行 `!!js`、不安装插件、不调用模型 API；通过不代表插件安全或能在宿主中正常运行。
 - export 通配符会枚举本地构建文件，fallback 数组仍标为未完成运行时解析。
-- workspace 支持 package.json 中的数组和 `{ packages: [...] }` 形式，以及 `!` 排除模式；暂不读取 pnpm-workspace.yaml。普通库跳过，声明了 dsh 的成员按可安装插件要求检查。
+- workspace 支持 package.json 中的数组和 `{ packages: [...] }` 形式，以及 `!` 排除模式；没有 npm workspace 声明时，读取 pnpm-workspace.yaml 的 packages 字段。普通库跳过，声明了 dsh 的成员按可安装插件要求检查。
 - 不读取用户 profile 的兼容性豁免，不尝试复现完整 Cordis composer。升级宿主后，应重新核对规则。
 - JSON 报告含本机绝对根路径；SARIF 的文件位置相对项目根目录。
 

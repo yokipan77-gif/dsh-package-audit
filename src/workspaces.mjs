@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { audit, isObject } from './audit.mjs'
 import { packageFile } from './files.mjs'
+import { parseDocument } from 'yaml'
 
 /** Audit DSH members of declared npm workspaces, without traversing dependencies. */
 export function auditWorkspace(directory, options = {}) {
@@ -13,8 +14,20 @@ export function auditWorkspace(directory, options = {}) {
     const rootFile = packageFile(root, 'package.json').absolute
     if (fs.statSync(rootFile).size > 1024 * 1024) throw new Error('Workspace manifest exceeds 1 MiB.')
     const manifest = JSON.parse(fs.readFileSync(rootFile, 'utf8').replace(/^\uFEFF/, ''))
-    const patterns = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages
-    if (!Array.isArray(patterns) || !patterns.length || patterns.some(p => {
+    let patterns = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages
+    let pnpm = false
+    if (manifest.workspaces === undefined && fs.existsSync(path.join(root, 'pnpm-workspace.yaml'))) {
+      const config = packageFile(root, 'pnpm-workspace.yaml').absolute
+      if (fs.statSync(config).size > 1024 * 1024) throw new Error('pnpm-workspace.yaml exceeds 1 MiB.')
+      const document = parseDocument(fs.readFileSync(config, 'utf8'))
+      if (document.errors.length) throw new Error(`Invalid pnpm-workspace.yaml: ${document.errors[0].message}`)
+      const data = document.toJS({ maxAliasCount: 50 })
+      if (!isObject(data)) throw new Error('pnpm-workspace.yaml must contain a mapping.')
+      pnpm = true
+      patterns = data.packages ?? []
+      if (manifest.dsh !== undefined) packages.push(audit(root, options))
+    }
+    if (!Array.isArray(patterns) || (!patterns.length && !pnpm) || patterns.some(p => {
       if (typeof p !== 'string') return true
       const target = p.startsWith('!') ? p.slice(1) : p
       return !target.trim() || target.includes('..') || /^[\\/!]|^[a-z][a-z\d+.-]*:/iu.test(target)
@@ -23,8 +36,8 @@ export function auditWorkspace(directory, options = {}) {
     }
     const includes = patterns.filter(p => !p.startsWith('!'))
     const exclusions = patterns.filter(p => p.startsWith('!')).map(p => p.slice(1).replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json')
-    if (!includes.length) throw new Error('Workspace patterns must include at least one positive path pattern.')
-    const seen = new Set()
+    if (!includes.length && !pnpm) throw new Error('Workspace patterns must include at least one positive path pattern.')
+    const seen = new Set(pnpm ? [rootFile] : [])
     scan: for (const pattern of includes) {
       const matches = fs.globSync(pattern.replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json', {
         cwd: root, exclude: ['**/node_modules/**', '**/.git/**', ...exclusions],

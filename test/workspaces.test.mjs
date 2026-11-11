@@ -69,3 +69,35 @@ test('rejects exclusion-only and escaping exclusion configurations', t => {
   f.write('package.json', JSON.stringify(f.manifest))
   assert.equal(auditWorkspace(f.root).ok, false)
 })
+
+test('discovers pnpm members and applies pnpm exclusions', t => {
+  const f = fixture(t)
+  f.write('package.json', '{"name":"workspace","private":true}')
+  f.write('pnpm-workspace.yaml', "packages:\n  - 'plugins/*'\n  - '!plugins/fixture'\n")
+  f.write('plugins/real/package.json', JSON.stringify(f.manifest))
+  f.write('plugins/real/cordis.patch.yml', '[]')
+  f.write('plugins/fixture/package.json', '{')
+  const report = auditWorkspace(f.root)
+  assert.equal(report.ok, true)
+  assert.equal(report.packages.length, 1)
+})
+
+test('pnpm includes a DSH root package even when packages is omitted', t => {
+  const f = fixture(t)
+  f.write('pnpm-workspace.yaml', '{}')
+  const report = auditWorkspace(f.root)
+  assert.equal(report.ok, true)
+  assert.equal(report.packages[0].root, f.root)
+})
+
+test('npm workspace declarations win, and malformed pnpm config is not ignored', t => {
+  const f = fixture(t, { workspaces: ['plugins/*'] })
+  f.write('pnpm-workspace.yaml', '[')
+  f.write('plugins/real/package.json', JSON.stringify(f.manifest))
+  f.write('plugins/real/cordis.patch.yml', '[]')
+  assert.equal(auditWorkspace(f.root).ok, true)
+  delete f.manifest.workspaces
+  f.write('package.json', JSON.stringify(f.manifest))
+  assert.equal(auditWorkspace(f.root).ok, false)
+  assert.match(auditWorkspace(f.root).findings[0].message, /Invalid pnpm-workspace/)
+})
