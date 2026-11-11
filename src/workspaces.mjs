@@ -14,13 +14,20 @@ export function auditWorkspace(directory, options = {}) {
     if (fs.statSync(rootFile).size > 1024 * 1024) throw new Error('Workspace manifest exceeds 1 MiB.')
     const manifest = JSON.parse(fs.readFileSync(rootFile, 'utf8').replace(/^\uFEFF/, ''))
     const patterns = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages
-    if (!Array.isArray(patterns) || !patterns.length || patterns.some(p => typeof p !== 'string' || !p.trim() || p.includes('..') || /^[\\/!]|^[a-z][a-z\d+.-]*:/iu.test(p))) {
-      throw new Error('Declare non-empty npm workspace path patterns inside this repository; parent paths, absolute paths and exclusions are not supported.')
+    if (!Array.isArray(patterns) || !patterns.length || patterns.some(p => {
+      if (typeof p !== 'string') return true
+      const target = p.startsWith('!') ? p.slice(1) : p
+      return !target.trim() || target.includes('..') || /^[\\/!]|^[a-z][a-z\d+.-]*:/iu.test(target)
+    })) {
+      throw new Error('Declare non-empty workspace path patterns inside this repository; parent paths and absolute paths are not supported.')
     }
+    const includes = patterns.filter(p => !p.startsWith('!'))
+    const exclusions = patterns.filter(p => p.startsWith('!')).map(p => p.slice(1).replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json')
+    if (!includes.length) throw new Error('Workspace patterns must include at least one positive path pattern.')
     const seen = new Set()
-    scan: for (const pattern of patterns) {
+    scan: for (const pattern of includes) {
       const matches = fs.globSync(pattern.replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json', {
-        cwd: root, exclude: ['**/node_modules/**', '**/.git/**'],
+        cwd: root, exclude: ['**/node_modules/**', '**/.git/**', ...exclusions],
       })
       for (const file of matches.sort()) {
         try {

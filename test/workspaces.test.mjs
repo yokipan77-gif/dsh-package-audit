@@ -50,3 +50,22 @@ test('fails empty workspace discovery and rejects parent-directory patterns', t 
   f.write('package.json', JSON.stringify(f.manifest))
   assert.match(auditWorkspace(f.root).findings[0].message, /parent paths/)
 })
+
+test('honors workspace exclusions regardless of declaration order', t => {
+  const f = fixture(t, { workspaces: ['!packages/private', 'packages/*', '!**/fixtures/**'] })
+  f.write('packages/public/package.json', JSON.stringify(f.manifest))
+  f.write('packages/public/cordis.patch.yml', '[]')
+  f.write('packages/private/package.json', '{')
+  const result = auditWorkspace(f.root)
+  assert.equal(result.ok, true)
+  assert.equal(result.packages.length, 1)
+  assert.ok(result.packages[0].root.endsWith('public'))
+})
+
+test('rejects exclusion-only and escaping exclusion configurations', t => {
+  const f = fixture(t, { workspaces: ['!packages/private'] })
+  assert.equal(auditWorkspace(f.root).ok, false)
+  f.manifest.workspaces = ['packages/*', '!../private']
+  f.write('package.json', JSON.stringify(f.manifest))
+  assert.equal(auditWorkspace(f.root).ok, false)
+})
