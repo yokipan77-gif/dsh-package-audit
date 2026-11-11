@@ -17,6 +17,12 @@ try {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
   manifest.scripts = { prepare: 'node -e "require(\'node:fs\').writeFileSync(\'LIFECYCLE_RAN\',\'unexpected\')"' }
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+  assert.equal(audit(sample).ok, true)
+  assert.equal(fs.existsSync(path.join(sample, 'LIFECYCLE_RAN')), false)
+  // npm 10 pack runs prepare even with --ignore-scripts. The audit itself
+  // never invokes npm; pack only this controlled, script-free fixture.
+  delete manifest.scripts
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   const pack = cwd => {
     const result = spawnSync(process.execPath, [npmCli, 'pack', '--dry-run', '--json', '--ignore-scripts', '--offline'], {
       cwd, encoding: 'utf8', timeout: 30_000,
@@ -40,7 +46,7 @@ try {
   for (const file of ['bin/audit.mjs', 'src/audit.mjs', 'src/workspaces.mjs', 'src/sarif.mjs', 'LICENSE']) {
     assert.ok(own.files.some(entry => entry.path === file), `Auditor package omits ${file}`)
   }
-  console.log('Release smoke passed: valid artifact, omitted patch, ignored lifecycle scripts, auditor package contents.')
+  console.log('Release smoke passed: valid artifact, omitted patch, audit executes no scripts, auditor package contents.')
 } finally {
   const resolved = path.resolve(temporary)
   assert.ok(path.dirname(resolved) === path.resolve(os.tmpdir()) && path.basename(resolved).startsWith('dsh-release-smoke-'))

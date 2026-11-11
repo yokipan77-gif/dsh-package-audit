@@ -40,7 +40,7 @@ node bin/audit.mjs ../monorepo --workspace --json
 node bin/audit.mjs ../your-plugin --sarif > findings.sarif
 ```
 
-清单应保存在被检查包的目录之外，并在任何改动后重新生成。工具检查包名和版本是否匹配，但无法证明外部清单没有过期。`--ignore-scripts` 跳过生命周期脚本，因此必须先自行构建。
+清单应保存在被检查包的目录之外，并在任何改动后重新生成。工具检查包名和版本是否匹配，但无法证明外部清单没有过期。先自行构建；仅对可信代码使用 npm pack，npm 10 即使带 `--ignore-scripts` 也可能执行 `prepare`。本工具只读取已有报告，不会调用 npm。
 
 退出码：0 无错误；1 检查发现问题；2 参数错误。`--fail-on-warning` 可让警告也返回 1，普通 note 不会触发。
 

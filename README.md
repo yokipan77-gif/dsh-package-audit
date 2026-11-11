@@ -22,6 +22,8 @@ Development was assisted by Codex. Tests and limitations are part of the reposit
 
 To catch files that exist locally but are omitted from publication, run `npm pack --dry-run --json --ignore-scripts` in the plugin directory and save its JSON output outside that directory. Pass it with `--packlist /path/to/pack.json`. Build the plugin first: lifecycle scripts are deliberately not run by the audit. The report must match the package name and version; regenerate it after changes. A supplied report can be stale, so this is not a verification of an already-published tarball.
 
+Generate pack reports only from code you trust: npm 10 may run `prepare` even with `--ignore-scripts`. The audit CLI only reads an existing report; it never invokes npm. The smoke test removes scripts from its controlled fixture before asking npm to pack it.
+
 ## Checks
 
 - Bundle metadata, single/ordered patch paths, bounded YAML parsing without executing `!!js`.
