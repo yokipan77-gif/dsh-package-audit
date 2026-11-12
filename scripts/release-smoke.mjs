@@ -84,7 +84,25 @@ try {
     if (format === '--sarif') assert.equal(JSON.parse(text).version, '2.1.0')
     if (format === '--markdown') assert.ok(text.includes('No findings.'))
   }
-  console.log('Release smoke passed: packlist, omitted patch, script-free audit, offline tarball installation and installed CLI in three report formats.')
+  manifest.workspaces = ['.']
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+  const libraryProbe = `
+    import assert from 'node:assert/strict'
+    import { audit } from '@yokipan77/dsh-package-audit'
+    import { auditWorkspace } from '@yokipan77/dsh-package-audit/workspace'
+    import { toSarif, toMarkdown, toText } from '@yokipan77/dsh-package-audit/reports'
+    const report = audit(process.argv[1])
+    assert.equal(report.ok, true)
+    assert.equal(auditWorkspace(process.argv[1]).ok, true)
+    assert.equal(toSarif(report).version, '2.1.0')
+    assert.ok(toMarkdown(report).includes('No findings.'))
+    assert.ok(toText(report).startsWith('PASS'))
+  `
+  const library = spawnSync(process.execPath, ['--input-type=module', '--eval', libraryProbe, sample], {
+    cwd: installedRoot, encoding: 'utf8', timeout: 10_000,
+  })
+  assert.equal(library.status, 0, library.stderr)
+  console.log('Release smoke passed: packlist, omitted patch, script-free audit, offline installation, installed CLI and public library entry points.')
 } finally {
   const resolved = path.resolve(temporary)
   assert.ok(path.dirname(resolved) === path.resolve(os.tmpdir()) && path.basename(resolved).startsWith('dsh-release-smoke-'))

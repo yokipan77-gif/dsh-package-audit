@@ -26,6 +26,8 @@ Generate pack reports only from code you trust: npm 10 may run `prepare` even wi
 
 ## Checks
 
+Node export URLs are decoded before checking files, and invalid subpath/condition maps are rejected. Legacy `browser` file/replacement declarations are inspected, while dependency aliases remain explicitly unresolved. Bundle visibility must be boolean; repeated patch artifacts produce a warning.
+
 Optional `screenshots.json` declarations are checked against the [community catalog format](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md#screenshots--截图optional-recommended--可选推荐): 1–8 local images or GitHub-hosted HTTPS URLs. Remote images are not fetched. Repository-only screenshots are inspected inputs, not required npm artifacts.
 
 - Bundle metadata, single/ordered patch paths, bounded YAML parsing without executing `!!js`.
@@ -45,3 +47,20 @@ Use `--markdown --output audit.md` to attach a summary to a PR, or `--json --out
 This CLI is not published to npm yet. Use this checkout. It does not model the full Cordis composer, profile compatibility exemptions or runtime behavior. Export wildcard artifacts are enumerated; fallback arrays remain explicitly unverified. Workspace discovery supports package.json arrays and `{ packages: [...] }`, including `!` exclusions. When npm workspaces are absent, it reads `packages` from [pnpm-workspace.yaml](https://pnpm.io/pnpm-workspace_yaml); pnpm catalogs/settings are not interpreted. Limits: manifest/patch/workspace YAML 1 MiB, pack report 8 MiB, 2000 workspace members. JSON reports include absolute local root paths; SARIF artifact locations are relative.
 
 The audit checks every DSH-declaring workspace member as an installable bundle; internal client-only libraries may legitimately fail that contract. The minimal example is an inert packaging fixture, not an advertised plugin feature.
+
+## Runtime targets, budgets and library use
+
+`--node-version 22.17.0` checks `engines.node` against an explicit target; without a target, only the range syntax is checked. `--workspace --include-root` also audits the npm workspace's root as a plugin; pnpm already includes a DSH-declaring root. `--packlist pack.json --max-unpacked-size 5242880` enforces a per-package byte budget using the report's file sizes, which must all be present. SARIF results include stable fingerprints for deduplication across checkout locations.
+
+When installed from a local checkout or tarball, these public ESM entry points are available (the package is not on npm yet):
+
+```js
+import { audit } from '@yokipan77/dsh-package-audit'
+import { auditWorkspace } from '@yokipan77/dsh-package-audit/workspace'
+import { toSarif, toMarkdown, toText } from '@yokipan77/dsh-package-audit/reports'
+
+const report = audit('/path/to/plugin', { nodeVersion: '22.17.0' })
+console.log(toMarkdown(report))
+```
+
+Library calls return reports without setting process exit codes or writing report files. The release smoke test checks both CLI and public API imports from the isolated, installed tarball.

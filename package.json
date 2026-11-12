@@ -6,7 +6,11 @@
   "bin": {
     "dsh-package-audit": "bin/audit.mjs"
   },
-  "exports": "./src/audit.mjs",
+  "exports": {
+    ".": "./src/audit.mjs",
+    "./workspace": "./src/workspaces.mjs",
+    "./reports": "./src/reports.mjs"
+  },
   "files": [
     "bin",
     "src",

@@ -49,6 +49,12 @@ node bin/audit.mjs ../your-plugin --markdown --output audit.md
 
 ## 范围与限制
 
+新增检查：Node 导出 URL 与条件映射、浏览器构建入口、bundle 显示字段、重复补丁、可选 screenshots.json、pack 报告的包体积预算。截图仅用于 GitHub 展示时不强制放进 npm 包；远程图片不会联网验证。
+
+`--node-version 22.17.0` 检查指定 Node 版本；`--workspace --include-root` 同时检查 npm monorepo 根插件；`--packlist pack.json --max-unpacked-size 5242880` 设置单包解压体积预算。SARIF 结果包含跨机器位置稳定的指纹，方便 CI 去重。
+
+从本地仓库或 tarball 安装后，可导入公开 ESM API：根入口的 audit、`/workspace` 的 auditWorkspace，以及 `/reports` 的 toSarif/toMarkdown/toText。API 返回报告，不修改进程退出码或自动保存文件；发布验证会检查真实安装后的 API。
+
 - 不导入插件代码、不执行 `!!js`、不安装插件、不调用模型 API；通过不代表插件安全或能在宿主中正常运行。
 - export 通配符会枚举本地构建文件，fallback 数组仍标为未完成运行时解析。
 - workspace 支持 package.json 中的数组和 `{ packages: [...] }` 形式，以及 `!` 排除模式；没有 npm workspace 声明时，读取 pnpm-workspace.yaml 的 packages 字段。普通库跳过，声明了 dsh 的成员按可安装插件要求检查。
