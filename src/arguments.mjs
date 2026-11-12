@@ -13,9 +13,9 @@ export function parseArgs(args) {
       else if (arg === '--sarif') options.sarif = true
       else if (arg === '--markdown') options.markdown = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
-      else if (['--packlist', '--dsh-version', '--platform', '--output'].includes(arg)) {
+      else if (['--packlist', '--dsh-version', '--platform', '--output', '--max-unpacked-size'].includes(arg)) {
         if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
-        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform', '--output': 'output' }[arg]
+        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--platform': 'platform', '--output': 'output', '--max-unpacked-size': 'maxUnpackedSize' }[arg]
         options[key] = args[++i]
       } else throw new Error(`Unknown option ${arg}`)
     } else {
@@ -25,5 +25,10 @@ export function parseArgs(args) {
     }
   }
   if ([options.json, options.sarif, options.markdown].filter(Boolean).length > 1) throw new Error('Choose one of --json, --sarif or --markdown')
+  if (options.maxUnpackedSize !== undefined) {
+    if (!/^(0|[1-9]\d*)$/u.test(options.maxUnpackedSize) || !Number.isSafeInteger(Number(options.maxUnpackedSize))) throw new Error('--max-unpacked-size requires a non-negative integer byte count')
+    options.maxUnpackedSize = Number(options.maxUnpackedSize)
+    if (!options.packlist) throw new Error('--max-unpacked-size requires --packlist')
+  }
   return options
 }

@@ -1,8 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-export function checkPacklist({ root, manifest, references, add }, packlist) {
-  if (!packlist) return
+export function checkPacklist({ root, manifest, references, add }, packlist, options = {}) {
+  if (!packlist) {
+    if (options.maxUnpackedSize !== undefined) add('pack.budget.report', 'A size budget requires a pack report with per-file sizes.')
+    return
+  }
   try {
     if (fs.statSync(packlist).size > 8 * 1024 * 1024) throw new Error('Pack report exceeds 8 MiB.')
     const reports = JSON.parse(fs.readFileSync(packlist, 'utf8').replace(/^\uFEFF/, ''))
@@ -18,6 +21,13 @@ export function checkPacklist({ root, manifest, references, add }, packlist) {
     const shipped = new Set(files.map(row => normalize(row.path)))
     if (shipped.size !== files.length) throw new Error('Pack report repeats a file path; regenerate the report with npm.')
     if (files.some(row => row.size !== undefined && (!Number.isSafeInteger(row.size) || row.size < 0))) throw new Error('Pack report file sizes must be non-negative integers.')
+    if (options.maxUnpackedSize !== undefined) {
+      if (!Number.isSafeInteger(options.maxUnpackedSize) || options.maxUnpackedSize < 0) throw new Error('Size budget must be a non-negative integer byte count.')
+      if (files.some(row => row.size === undefined)) throw new Error('Every file needs a size to evaluate the unpacked-size budget.')
+      const total = files.reduce((sum, row) => sum + row.size, 0)
+      if (!Number.isSafeInteger(total)) throw new Error('Total packed-file size exceeds the integer precision limit.')
+      if (total > options.maxUnpackedSize) add('pack.budget', `Unpacked size ${total} bytes exceeds the ${options.maxUnpackedSize}-byte budget. Remove unneeded files or adjust the budget.`)
+    }
     const sizes = new Map(files.map(row => [normalize(row.path), row.size]))
     const checked = new Set()
     for (const { file, field } of [{ file: 'package.json', field: 'manifest' }, ...references.filter(ref => ref.packed !== false)]) {
