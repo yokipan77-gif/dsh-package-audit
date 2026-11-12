@@ -22,6 +22,14 @@ test('clean reports generate empty SARIF results', t => {
   assert.deepEqual(toSarif(audit(f.root)).runs[0].results, [])
   assert.throws(() => parseArgs(['--json', '--sarif']))
 })
+
+test('SARIF fingerprints survive checkout relocation and distinguish changed findings', () => {
+  const report = (directory, message = 'Build the artifact.') => ({ root: path.resolve(directory), findings: [{ code: 'file.invalid', severity: 'error', file: 'package.json', message }] })
+  const fingerprint = value => toSarif(value).runs[0].results[0].partialFingerprints['dshFinding/v1']
+  assert.equal(fingerprint(report('first-checkout')), fingerprint(report('second-checkout')))
+  assert.notEqual(fingerprint(report('first-checkout')), fingerprint(report('first-checkout', 'Correct the declaration.')))
+  assert.match(fingerprint(report('first-checkout')), /^[a-f0-9]{64}$/u)
+})
 test('warnings fail CI only when explicitly requested', t => {
   const f = fixture(t)
   f.manifest.dsh.manifestVersion = 2
