@@ -1,5 +1,6 @@
 import { checkExportPattern } from './export-patterns.mjs'
 import { exportPath } from './export-targets.mjs'
+import { checkExportMap } from './export-maps.mjs'
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
 export function checkEntries({ root, manifest, checkFile, add }) {
@@ -26,7 +27,10 @@ export function checkEntries({ root, manifest, checkFile, add }) {
       for (const [key, target] of Object.entries(value)) visit(target, `${field}.${key}`)
     } else add('entry.export', `${field} must contain export paths, conditions, arrays or null.`)
   }
-  if (manifest.exports !== undefined) visit(manifest.exports, 'exports')
+  if (manifest.exports !== undefined) {
+    checkExportMap(manifest.exports, add)
+    visit(manifest.exports, 'exports')
+  }
 
   const client = manifest.dsh?.client
   if (client !== undefined) {
