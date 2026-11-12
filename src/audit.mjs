@@ -7,6 +7,7 @@ import { checkIcon } from './icons.mjs'
 import { checkPacklist } from './packlist.mjs'
 import { checkCompatibility } from './compatibility.mjs'
 import validatePackageName from 'validate-npm-package-name'
+import { checkBrowser } from './browser.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -61,6 +62,7 @@ export function audit(directory, options = {}) {
   }
   checkPatches({ manifest, checkFile, add })
   checkEntries({ root, manifest, checkFile, add })
+  checkBrowser({ manifest, checkFile, add })
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
   checkPacklist({ root, manifest, references, add }, options.packlist)
