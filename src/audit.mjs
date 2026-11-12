@@ -8,6 +8,7 @@ import { checkPacklist } from './packlist.mjs'
 import { checkCompatibility } from './compatibility.mjs'
 import validatePackageName from 'validate-npm-package-name'
 import { checkBrowser } from './browser.mjs'
+import { checkScreenshots } from './screenshots.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -17,10 +18,10 @@ export function audit(directory, options = {}) {
   const findings = []
   const add = (code, message, file = 'package.json', severity = 'error') => findings.push({ code, severity, file, message })
   const references = []
-  const checkFile = (declared, field) => {
+  const checkFile = (declared, field, { packed = true } = {}) => {
     try {
       const file = packageFile(root, declared)
-      references.push({ file: file.relative, field })
+      references.push({ file: file.relative, field, ...(!packed ? { packed: false } : {}) })
       return file
     } catch (error) {
       add('file.invalid', `${field}: ${error.message}`)
@@ -66,6 +67,7 @@ export function audit(directory, options = {}) {
   checkPatches({ manifest, checkFile, add })
   checkEntries({ root, manifest, checkFile, add })
   checkBrowser({ manifest, checkFile, add })
+  checkScreenshots({ root, checkFile, add })
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
   checkPacklist({ root, manifest, references, add }, options.packlist)

@@ -20,7 +20,7 @@ export function checkPacklist({ root, manifest, references, add }, packlist) {
     if (files.some(row => row.size !== undefined && (!Number.isSafeInteger(row.size) || row.size < 0))) throw new Error('Pack report file sizes must be non-negative integers.')
     const sizes = new Map(files.map(row => [normalize(row.path), row.size]))
     const checked = new Set()
-    for (const { file, field } of [{ file: 'package.json', field: 'manifest' }, ...references]) {
+    for (const { file, field } of [{ file: 'package.json', field: 'manifest' }, ...references.filter(ref => ref.packed !== false)]) {
       if (checked.has(file)) continue
       checked.add(file)
       if (!shipped.has(file)) add('pack.missing', `${field} references ${file}, but it is absent from npm's pack report. Check files/.npmignore and rebuild before packing.`, file)

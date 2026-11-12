@@ -26,6 +26,8 @@ Generate pack reports only from code you trust: npm 10 may run `prepare` even wi
 
 ## Checks
 
+Optional `screenshots.json` declarations are checked against the [community catalog format](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/blob/main/contributing.md#screenshots--截图optional-recommended--可选推荐): 1–8 local images or GitHub-hosted HTTPS URLs. Remote images are not fetched. Repository-only screenshots are inspected inputs, not required npm artifacts.
+
 - Bundle metadata, single/ordered patch paths, bounded YAML parsing without executing `!!js`.
 - Realpath-contained files, emitted main/types/bin/conditional export artifacts and client declaration types.
 - Optional icon formats and the host's 256 KiB size limit.
