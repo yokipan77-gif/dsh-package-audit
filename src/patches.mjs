@@ -6,9 +6,15 @@ export function checkPatches({ manifest, checkFile, add }) {
   const declared = manifest.dsh?.bundle?.patch
   const paths = Array.isArray(declared) ? declared : [declared]
   if (!paths.length || paths.some(p => typeof p !== 'string' || !p.trim())) return
+  const seen = new Set()
   for (const declaredPath of paths) {
     const file = checkFile(declaredPath, 'dsh.bundle.patch')
     if (!file) continue
+    if (seen.has(file.absolute)) {
+      add('patch.duplicate', 'This patch file is declared more than once and would be applied repeatedly. Remove the duplicate unless repetition is intentional.', file.relative, 'warning')
+      continue
+    }
+    seen.add(file.absolute)
     try {
       if (fs.statSync(file.absolute).size > 1024 * 1024) throw new Error('Patch exceeds the 1 MiB parser limit.')
       let dynamic = false

@@ -51,6 +51,9 @@ export function audit(directory, options = {}) {
   if (!isObject(manifest.dsh) || !isObject(manifest.dsh.bundle)) {
     add('bundle.required', 'Declare dsh.bundle with its patch file; dsh.client alone is not an installable bundle.')
   } else {
+    if (manifest.dsh.bundle.listedByDefault !== undefined && typeof manifest.dsh.bundle.listedByDefault !== 'boolean') {
+      add('bundle.listed', 'dsh.bundle.listedByDefault must be a boolean, not a string or number.')
+    }
     const patch = manifest.dsh.bundle.patch
     const patches = Array.isArray(patch) ? patch : [patch]
     if (!patches.length || patches.some(item => typeof item !== 'string' || !item.trim())) {
