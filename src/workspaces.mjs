@@ -27,6 +27,7 @@ export function auditWorkspace(directory, options = {}) {
       patterns = data.packages ?? []
       if (manifest.dsh !== undefined) packages.push(audit(root, options))
     }
+    if (!pnpm && options.includeRoot) packages.push(audit(root, options))
     if (!Array.isArray(patterns) || (!patterns.length && !pnpm) || patterns.some(p => {
       if (typeof p !== 'string') return true
       const target = p.startsWith('!') ? p.slice(1) : p
@@ -37,7 +38,7 @@ export function auditWorkspace(directory, options = {}) {
     const includes = patterns.filter(p => !p.startsWith('!'))
     const exclusions = patterns.filter(p => p.startsWith('!')).map(p => p.slice(1).replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json')
     if (!includes.length && !pnpm) throw new Error('Workspace patterns must include at least one positive path pattern.')
-    const seen = new Set(pnpm ? [rootFile] : [])
+    const seen = new Set(pnpm || options.includeRoot ? [rootFile] : [])
     scan: for (const pattern of includes) {
       const matches = fs.globSync(pattern.replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json', {
         cwd: root, exclude: ['**/node_modules/**', '**/.git/**', ...exclusions],

@@ -10,6 +10,7 @@ export function parseArgs(args) {
       if (arg === '--help') options.help = true
       else if (arg === '--json') options.json = true
       else if (arg === '--workspace') options.workspace = true
+      else if (arg === '--include-root') options.includeRoot = true
       else if (arg === '--sarif') options.sarif = true
       else if (arg === '--markdown') options.markdown = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
@@ -25,6 +26,7 @@ export function parseArgs(args) {
     }
   }
   if ([options.json, options.sarif, options.markdown].filter(Boolean).length > 1) throw new Error('Choose one of --json, --sarif or --markdown')
+  if (options.includeRoot && !options.workspace) throw new Error('--include-root requires --workspace')
   if (options.maxUnpackedSize !== undefined) {
     if (!/^(0|[1-9]\d*)$/u.test(options.maxUnpackedSize) || !Number.isSafeInteger(Number(options.maxUnpackedSize))) throw new Error('--max-unpacked-size requires a non-negative integer byte count')
     options.maxUnpackedSize = Number(options.maxUnpackedSize)

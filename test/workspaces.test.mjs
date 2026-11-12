@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { auditWorkspace } from '../src/workspaces.mjs'
 import { fixture } from './helpers.mjs'
+import { parseArgs } from '../src/arguments.mjs'
 
 test('audits each DSH member once and skips ordinary workspace libraries', t => {
   const f = fixture(t, { workspaces: ['packages/*', 'packages/good'] })
@@ -15,6 +16,20 @@ test('audits each DSH member once and skips ordinary workspace libraries', t => 
   assert.equal(report.packages.length, 2)
   assert.equal(report.ok, false)
   assert.equal(report.packages.find(p => p.name === 'example-plugin').ok, true)
+})
+
+test('optionally includes the npm root plugin and propagates its failures', t => {
+  const f = fixture(t, { workspaces: ['packages/*'] })
+  f.write('packages/good/package.json', JSON.stringify(f.manifest))
+  f.write('packages/good/cordis.patch.yml', '[]')
+  f.manifest.version = 'not-a-version'
+  f.write('package.json', JSON.stringify(f.manifest))
+  assert.equal(auditWorkspace(f.root).ok, true)
+  const included = auditWorkspace(f.root, { includeRoot: true })
+  assert.equal(included.ok, false)
+  assert.equal(included.packages.length, 2)
+  assert.ok(included.packages.some(pkg => pkg.root === f.root && !pkg.ok))
+  assert.throws(() => parseArgs(['--include-root']))
 })
 test('reports malformed members rather than dropping them from the result', t => {
   const f = fixture(t, { workspaces: { packages: ['packages/*'] } })
