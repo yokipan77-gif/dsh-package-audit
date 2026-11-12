@@ -1,3 +1,5 @@
+import { checkExportPattern } from './export-patterns.mjs'
+import { exportPath } from './export-targets.mjs'
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
 export function checkEntries({ root, manifest, checkFile, add }) {
@@ -11,10 +13,11 @@ export function checkEntries({ root, manifest, checkFile, add }) {
   function visit(value, field) {
     if (value === null) return // Explicitly blocked export.
     if (typeof value === 'string') {
-      if (!value.startsWith('./')) { add('entry.export', `${field} must be a package-relative ./ path or null.`); return }
+      let target
+      try { target = exportPath(value) } catch (error) { add('entry.export', `${field}: ${error.message}`); return }
       if (value.includes('*')) {
-        checkExportPattern(root, value, field, checkFile, add)
-      } else checkFile(value, field)
+        checkExportPattern(root, target, field, checkFile, add)
+      } else checkFile(target, field)
     } else if (Array.isArray(value)) {
       // Node permits a fallback list. Report each missing candidate as advisory,
       // since a later condition/target can still be valid at runtime.
@@ -37,4 +40,3 @@ export function checkEntries({ root, manifest, checkFile, add }) {
     if (client.immediately !== undefined && typeof client.immediately !== 'boolean') add('client.immediately', 'dsh.client.immediately must be a boolean.')
   }
 }
-import { checkExportPattern } from './export-patterns.mjs'
