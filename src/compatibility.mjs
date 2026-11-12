@@ -11,6 +11,16 @@ export function checkCompatibility({ manifest, add }, options) {
     add('compat.engines', 'engines must be an object; the host cannot evaluate this declaration.')
     return
   }
+  if (options.nodeVersion !== undefined && !semver.valid(options.nodeVersion)) {
+    add('compat.node.version', 'The supplied Node.js target must be a valid SemVer version.')
+  } else if (Object.hasOwn(manifest.engines ?? {}, 'node')) {
+    const range = manifest.engines.node
+    if (typeof range !== 'string' || !range.trim() || semver.validRange(range) === null) {
+      add('compat.node.range', 'engines.node must be a valid non-empty SemVer range.')
+    } else if (options.nodeVersion && !semver.satisfies(options.nodeVersion, range)) {
+      add('compat.node', `Node.js ${options.nodeVersion} does not satisfy engines.node: ${range}. Test and declare the supported runtime range.`)
+    }
+  }
   const requirements = []
   if (Object.hasOwn(manifest.engines ?? {}, 'dsh')) {
     requirements.push(['engines.dsh', manifest.engines.dsh, false])

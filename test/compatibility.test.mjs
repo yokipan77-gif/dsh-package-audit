@@ -27,3 +27,16 @@ test('checks target platform only when requested', t => {
   assert.equal(audit(f.root).ok, true)
   assert.equal(audit(f.root, { platform: 'win32' }).ok, false)
 })
+
+test('evaluates explicit Node targets without substituting the auditor runtime', t => {
+  const f = fixture(t, { engines: { node: '>=22.17.0' } })
+  assert.equal(audit(f.root).ok, true)
+  assert.equal(audit(f.root, { nodeVersion: '22.17.0' }).ok, true)
+  assert.ok(audit(f.root, { nodeVersion: '20.19.0' }).findings.some(f => f.code === 'compat.node'))
+  assert.ok(audit(f.root, { nodeVersion: 'latest' }).findings.some(f => f.code === 'compat.node.version'))
+})
+
+test('reports malformed Node engine ranges even without an explicit target', t => {
+  const f = fixture(t, { engines: { node: ['>=22'] } })
+  assert.ok(audit(f.root).findings.some(f => f.code === 'compat.node.range'))
+})
