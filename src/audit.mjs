@@ -78,5 +78,5 @@ export function audit(directory, options = {}) {
 }
 
 function finish(root, name, findings) {
-  return { schemaVersion: 1, root, name, ok: !findings.some(f => f.severity === 'error'), findings }
+  return { schemaVersion: 1, root, name: typeof name === 'string' ? name : null, ok: !findings.some(f => f.severity === 'error'), findings }
 }

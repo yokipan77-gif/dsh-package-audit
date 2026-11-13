@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DSH package audit report v1",
+  "oneOf": [{ "$ref": "#/definitions/package" }, { "$ref": "#/definitions/workspace" }],
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "required": ["code", "severity", "file", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "severity": { "enum": ["error", "warning", "note"] },
+        "file": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "required": ["file", "field"],
+      "properties": {
+        "file": { "type": "string" },
+        "field": { "type": "string" },
+        "packed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "package": {
+      "type": "object",
+      "required": ["schemaVersion", "root", "name", "ok", "findings"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "root": { "type": "string" },
+        "name": { "type": ["string", "null"] },
+        "ok": { "type": "boolean" },
+        "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+        "references": { "type": "array", "items": { "$ref": "#/definitions/reference" } }
+      },
+      "additionalProperties": false
+    },
+    "workspace": {
+      "type": "object",
+      "required": ["schemaVersion", "root", "ok", "findings", "packages"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "root": { "type": "string" },
+        "ok": { "type": "boolean" },
+        "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+        "packages": { "type": "array", "items": { "$ref": "#/definitions/package" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

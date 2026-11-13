@@ -9,11 +9,13 @@
   "exports": {
     ".": "./src/audit.mjs",
     "./workspace": "./src/workspaces.mjs",
-    "./reports": "./src/reports.mjs"
+    "./reports": "./src/reports.mjs",
+    "./schema": "./schemas/report-v1.schema.json"
   },
   "files": [
     "bin",
     "src",
+    "schemas",
     "README.md",
     "README.zh.md",
     "LICENSE"
@@ -35,5 +37,8 @@
     "semver": "7.8.6",
     "validate-npm-package-name": "7.0.0",
     "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0"
   }
 }

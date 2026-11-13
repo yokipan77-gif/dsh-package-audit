@@ -60,6 +60,9 @@ try {
   lock.name = installation.name
   lock.version = installation.version
   lock.packages[''] = installation
+  for (const [key, value] of Object.entries(lock.packages)) {
+    if (value.dev) delete lock.packages[key]
+  }
   lock.packages[`node_modules/${packageMetadata.name}`] = {
     version: packageMetadata.version, resolved: archiveSpec, integrity: distribution.integrity,
     dependencies: packageMetadata.dependencies, bin: packageMetadata.bin, engines: packageMetadata.engines,
