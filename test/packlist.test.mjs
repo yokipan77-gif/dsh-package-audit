@@ -47,3 +47,21 @@ test('rejects duplicate paths and malformed sizes in pack reports', t => {
     assert.equal(audit(f.root, { packlist: path.join(f.root, 'pack.json') }).findings[0].code, 'pack.report')
   }
 })
+
+test('normalizes portable pack paths before matching artifacts and duplicates', t => {
+  const f = fixture(t)
+  const writeReport = files => f.write('pack.json', JSON.stringify([{ name: f.manifest.name, version: f.manifest.version, files: files.map(path => ({ path })) }]))
+  const options = { packlist: path.join(f.root, 'pack.json') }
+  writeReport(['././package.json', './cordis.patch.yml'])
+  assert.equal(audit(f.root, options).ok, true)
+  writeReport(['package.json', '././package.json', 'cordis.patch.yml'])
+  assert.ok(audit(f.root, options).findings.some(f => f.code === 'pack.report' && f.message.includes('repeats')))
+})
+
+test('rejects empty and directory-shaped file entries', t => {
+  const f = fixture(t)
+  for (const entry of ['', '.', './', 'directory/']) {
+    f.write('pack.json', JSON.stringify([{ name: f.manifest.name, version: f.manifest.version, files: [{ path: entry }] }]))
+    assert.ok(audit(f.root, { packlist: path.join(f.root, 'pack.json') }).findings.some(f => f.code === 'pack.report'))
+  }
+})

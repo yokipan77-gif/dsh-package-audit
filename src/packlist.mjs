@@ -14,10 +14,11 @@ export function checkPacklist({ root, manifest, references, add }, packlist, opt
     if (matching.length !== 1) throw new Error('Pack report must contain exactly one entry with the audited package name and version. Regenerate it from this checkout.')
     const files = matching[0].files
     if (!Array.isArray(files) || files.some(row => typeof row?.path !== 'string')) throw new Error('Pack report files must contain path strings.')
-    const normalize = name => name.replaceAll('\\', '/').replace(/^\.\//u, '')
-    if (files.some(({ path }) => /^(?:[a-z][a-z\d+.-]*:|[\\/])/iu.test(path) || normalize(path).split('/').includes('..'))) {
+    const normalize = name => path.posix.normalize(name.replaceAll('\\', '/'))
+    if (files.some(({ path }) => /^(?:[a-z][a-z\d+.-]*:|[\\/])/iu.test(path) || path.replaceAll('\\', '/').split('/').includes('..'))) {
       throw new Error('Pack report contains an absolute or parent-traversing path.')
     }
+    if (files.some(row => !row.path || /[\\/]$/u.test(row.path) || normalize(row.path) === '.')) throw new Error('Pack report paths must name files, not empty paths or directories.')
     const shipped = new Set(files.map(row => normalize(row.path)))
     if (shipped.size !== files.length) throw new Error('Pack report repeats a file path; regenerate the report with npm.')
     if (files.some(row => row.size !== undefined && (!Number.isSafeInteger(row.size) || row.size < 0))) throw new Error('Pack report file sizes must be non-negative integers.')
