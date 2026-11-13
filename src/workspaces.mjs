@@ -66,6 +66,6 @@ export function auditWorkspace(directory, options = {}) {
     }
     if (!packages.length) fail('No DSH packages were found in the declared workspaces. Check the patterns and dsh declarations.')
   } catch (error) { fail(error.message) }
-  packages.sort((a, b) => a.root.localeCompare(b.root))
+  packages.sort((a, b) => a.root < b.root ? -1 : a.root > b.root ? 1 : 0)
   return { schemaVersion: 1, root, ok: !findings.length && packages.every(p => p.ok), findings, packages }
 }

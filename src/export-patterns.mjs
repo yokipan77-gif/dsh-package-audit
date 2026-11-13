@@ -9,7 +9,8 @@ export function checkExportPattern(root, target, field, checkFile, add) {
     const expression = new RegExp(`^${pieces[0]}(.*)${pieces.slice(1).join('\\1')}$`, 'u')
     let examined = 0
     let matched = 0
-    for (const file of fs.globSync('**/*', { cwd: root, exclude: ['**/node_modules/**', '**/.git/**'] })) {
+    const candidates = fs.globSync('**/*', { cwd: root, exclude: ['**/node_modules/**', '**/.git/**'] }).map(file => file.replaceAll('\\', '/')).sort()
+    for (const file of candidates) {
       if (++examined > 20_000) throw new Error('Export enumeration exceeded 20000 filesystem entries; narrow the package before auditing.')
       if (!expression.test(file.replaceAll('\\', '/'))) continue
       matched++
