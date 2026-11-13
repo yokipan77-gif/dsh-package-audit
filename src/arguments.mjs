@@ -14,6 +14,7 @@ export function parseArgs(args) {
       else if (arg === '--sarif') options.sarif = true
       else if (arg === '--markdown') options.markdown = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
+      else if (arg === '--publish-check') options.publishCheck = true
       else if (['--packlist', '--dsh-version', '--node-version', '--platform', '--output', '--max-unpacked-size'].includes(arg)) {
         if (!args[i + 1] || args[i + 1].startsWith('-')) throw new Error(`${arg} requires a value`)
         const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--node-version': 'nodeVersion', '--platform': 'platform', '--output': 'output', '--max-unpacked-size': 'maxUnpackedSize' }[arg]

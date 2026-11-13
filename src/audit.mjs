@@ -9,6 +9,7 @@ import { checkCompatibility } from './compatibility.mjs'
 import validatePackageName from 'validate-npm-package-name'
 import { checkBrowser } from './browser.mjs'
 import { checkScreenshots } from './screenshots.mjs'
+import { checkPublishing } from './publishing.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -71,6 +72,7 @@ export function audit(directory, options = {}) {
   checkScreenshots({ root, checkFile, add })
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
+  checkPublishing({ manifest, add }, options)
   checkPacklist({ root, manifest, references, add }, options.packlist, options)
   return { ...finish(root, manifest.name ?? null, findings), references }
 }
