@@ -14,7 +14,7 @@ export const isObject = value => value !== null && typeof value === 'object' && 
 
 /** Reads metadata only. Never imports the package or runs its lifecycle scripts. */
 export function audit(directory, options = {}) {
-  const root = path.resolve(directory)
+  let root = path.resolve(directory)
   const findings = []
   const add = (code, message, file = 'package.json', severity = 'error') => findings.push({ code, severity, file, message })
   const references = []
@@ -31,6 +31,7 @@ export function audit(directory, options = {}) {
   let manifest
   try {
     const file = packageFile(root, 'package.json').absolute
+    root = fs.realpathSync(root)
     if (fs.statSync(file).size > 1024 * 1024) throw new Error('package.json exceeds the 1 MiB read limit')
     manifest = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))
   } catch (error) {

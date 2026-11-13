@@ -6,12 +6,13 @@ import { parseDocument } from 'yaml'
 
 /** Audit DSH members of declared npm workspaces, without traversing dependencies. */
 export function auditWorkspace(directory, options = {}) {
-  const root = path.resolve(directory)
+  let root = path.resolve(directory)
   const packages = []
   const findings = []
   const fail = (message, file = 'package.json') => findings.push({ code: 'workspace.config', severity: 'error', file, message })
   try {
     const rootFile = packageFile(root, 'package.json').absolute
+    root = fs.realpathSync(root)
     if (fs.statSync(rootFile).size > 1024 * 1024) throw new Error('Workspace manifest exceeds 1 MiB.')
     const manifest = JSON.parse(fs.readFileSync(rootFile, 'utf8').replace(/^\uFEFF/, ''))
     let patterns = Array.isArray(manifest.workspaces) ? manifest.workspaces : manifest.workspaces?.packages
