@@ -11,12 +11,12 @@ export function checkEntries({ root, manifest, checkFile, add }) {
   if (manifest.bin !== undefined && typeof manifest.bin !== 'string' && !object(manifest.bin)) add('entry.bin', 'bin must be a file path or command-to-path object.')
   for (const bin of bins) checkFile(bin, 'bin')
 
-  function visit(value, field) {
+  function visit(value, field, pattern = false) {
     if (value === null) return // Explicitly blocked export.
     if (typeof value === 'string') {
       let target
       try { target = exportPath(value) } catch (error) { add('entry.export', `${field}: ${error.message}`); return }
-      if (value.includes('*')) {
+      if (pattern && value.split(/[?#]/u, 1)[0].includes('*')) {
         checkExportPattern(root, target, field, checkFile, add)
       } else checkFile(target, field)
     } else if (Array.isArray(value)) {
@@ -24,7 +24,7 @@ export function checkEntries({ root, manifest, checkFile, add }) {
       // since a later condition/target can still be valid at runtime.
       add('entry.fallback', `${field}: fallback arrays need runtime resolution; static audit does not choose a target.`, 'package.json', 'note')
     } else if (object(value)) {
-      for (const [key, target] of Object.entries(value)) visit(target, `${field}.${key}`)
+      for (const [key, target] of Object.entries(value)) visit(target, `${field}.${key}`, key.startsWith('.') ? key.includes('*') : pattern)
     } else add('entry.export', `${field} must contain export paths, conditions, arrays or null.`)
   }
   if (manifest.exports !== undefined) {

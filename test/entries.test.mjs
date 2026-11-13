@@ -38,3 +38,19 @@ test('validates declared CLI binaries and client fields', t => {
   const codes = audit(f.root).findings.map(f => f.code)
   for (const code of ['file.invalid', 'client.platform', 'client.inject', 'client.immediately']) assert.ok(codes.includes(code))
 })
+
+test('expands target stars only for matching wildcard export keys', t => {
+  const f = fixture(t, { exports: { './feature': { import: './dist/*.mjs' } } })
+  f.write('dist/available.mjs', 'export const value = 1')
+  assert.equal(audit(f.root).ok, false)
+  f.manifest.exports = { './feature/*': { import: './dist/*.mjs' } }
+  f.write('package.json', JSON.stringify(f.manifest))
+  assert.equal(audit(f.root).ok, true)
+})
+
+test('does not turn query-string stars into filesystem wildcards', t => {
+  const f = fixture(t, { exports: './index.mjs?build=*' })
+  f.write('index.mjs', '')
+  f.write('index.mjs.map', '{}')
+  assert.equal(audit(f.root).references.some(ref => ref.file === 'index.mjs.map'), false)
+})
