@@ -45,7 +45,7 @@ node bin/audit.mjs ../your-plugin --markdown --output audit.md
 
 退出码：0 无错误；1 检查发现问题；2 参数或报告保存错误。`--fail-on-warning` 可让警告也返回 1，普通 note 不会触发。`--output` 原子写入 UTF-8 文件，避免 Windows 重定向编码差异；输出目录必须已存在，并保护已有的审计输入不被覆盖。
 
-图片检查会识别 PNG/JPEG/WebP 文件头，但不执行完整图片解码。本地文件大小与 pack 报告不符时产生 `pack.stale` 警告；这不能证明报告真实。发布验证还会在临时目录中离线安装实际 tarball，再运行安装后的 CLI，检查 JSON、SARIF 和 Markdown 三种报告；依赖缓存由之前的 npm ci 提供。
+图片检查会识别 PNG/JPEG/WebP 文件头，但不执行完整图片解码。本地文件大小与 pack 报告不符时产生 `pack.stale` 警告；这不能证明报告真实。发布验证还会在临时目录中离线安装实际 tarball，再运行安装后的 CLI，检查 JSON、SARIF、Markdown 和 NDJSON 四种报告；依赖缓存由之前的 npm ci 提供，开发依赖不会进入隔离安装。CI 在 Windows/Linux 上覆盖最低 Node 22.17.0 及当前 Node 22/24。
 
 ## 范围与限制
 
@@ -53,7 +53,17 @@ node bin/audit.mjs ../your-plugin --markdown --output audit.md
 
 `--node-version 22.17.0` 检查指定 Node 版本；`--workspace --include-root` 同时检查 npm monorepo 根插件；`--packlist pack.json --max-unpacked-size 5242880` 设置单包解压体积预算。SARIF 结果包含跨机器位置稳定的指纹，方便 CI 去重。
 
-从本地仓库或 tarball 安装后，可导入公开 ESM API：根入口的 audit、`/workspace` 的 auditWorkspace，以及 `/reports` 的 toSarif/toMarkdown/toText。API 返回报告，不修改进程退出码或自动保存文件；发布验证会检查真实安装后的 API。
+从本地仓库或 tarball 安装后，可导入公开 ESM API：根入口的 audit、`/workspace` 的 auditWorkspace，以及 `/reports` 的 toSarif/toMarkdown/toText/toNDJSON。API 返回报告，不修改进程退出码或自动保存文件；发布验证会检查真实安装后的 API。
+
+`--publish-check` 开启 npm 发布元数据检查，检查 private、publishConfig 的 access/tag/registry 和 scripts 类型。普通审计允许 private 包；发布检查会拒绝它。生命周期脚本只提示名称，不执行、不输出脚本正文；不联网验证注册表权限或版本是否已经存在。
+
+`--platform linux --arch arm64` 检查 npm 的 os/cpu 允许与排除列表，复用 [npm-install-checks](https://github.com/npm/npm-install-checks)；platform 还检查 DSH bundle 平台声明。未指定的维度不推断成本机配置；不检查 libc 或原生二进制兼容性。API 对应 `{ platform: 'linux', arch: 'arm64', publishCheck: true }`。
+
+`--packlist -` 从标准输入读取已有 UTF-8 JSON，最多 8 MiB。PowerShell 可运行 `Get-Content -Raw -Encoding utf8 ../pack.json | node bin/audit.mjs ../plugin --packlist - --json`。API 也可直接传入 `packlistContent` 文本。
+
+`--ndjson` 每行一个 JSON 对象：单包为 type=package 的完整报告；workspace 先输出含 packageCount 的 type=workspace 汇总，再按稳定路径顺序输出各包。字符串里的换行会转义；先完成审计再序列化，不是边扫描边输出。四种结构化格式互斥，NDJSON 与 JSON 一样包含本机绝对根路径。
+
+普通 JSON 报告版本为 schemaVersion=1；[`schemas/report-v1.schema.json`](schemas/report-v1.schema.json) 提供 Draft 7 校验规则，覆盖成功、失败、workspace 和包名不可用时的 null。安装后可用 `import schema from '@yokipan77/dsh-package-audit/schema' with { type: 'json' }` 导入。该 Schema 不用于 SARIF 或 NDJSON 的外层记录。
 
 - 不导入插件代码、不执行 `!!js`、不安装插件、不调用模型 API；通过不代表插件安全或能在宿主中正常运行。
 - export 通配符会枚举本地构建文件，fallback 数组仍标为未完成运行时解析。

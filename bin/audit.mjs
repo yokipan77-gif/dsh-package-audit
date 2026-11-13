@@ -14,7 +14,7 @@ try { options = parseArgs(process.argv.slice(2)) } catch (error) {
   process.exit(2)
 }
 if (options.help) {
-  console.log('Usage: dsh-package-audit [directory] [--workspace [--include-root]] [--json | --sarif | --markdown] [--output file] [--fail-on-warning] [--packlist report.json] [--max-unpacked-size bytes] [--dsh-version version] [--node-version version] [--platform name]\nRead-only checks; --output explicitly saves a report. Exit 0: no errors; 1: findings; 2: usage/output error.')
+  console.log('Usage: dsh-package-audit [directory] [--workspace [--include-root]] [--json | --sarif | --markdown | --ndjson] [--output file] [--fail-on-warning] [--publish-check] [--packlist report.json|-] [--max-unpacked-size bytes] [--dsh-version version] [--node-version version] [--platform name] [--arch name]\nRead-only checks; --output explicitly saves a report; --packlist - reads UTF-8 JSON from stdin. Exit 0: no errors; 1: findings; 2: usage/input/output error.')
   process.exit(0)
 }
 if (options.packlist === '-') {

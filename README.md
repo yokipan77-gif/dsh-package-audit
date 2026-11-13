@@ -36,11 +36,11 @@ Optional `screenshots.json` declarations are checked against the [community cata
 - Packed-file presence using npm's own dry-run report, rather than guessing `files` whitelist semantics.
 - `--dsh-version 0.2.2-rc.1` and `--platform win32`: explicit compatibility targets. `engines.dsh` overrides DSH peers, following the [host implementation](https://github.com/deepseek-ai/deepseek-harness/blob/fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159/packages/boot/app-boot/src/plugin-compatibility.ts). Prereleases participate; supported workspace shortcuts apply only to peers.
 - `--workspace`: npm workspace members with a `dsh` declaration; ordinary libraries are skipped. Member failures propagate to the process exit code.
-- `--sarif`: SARIF 2.1.0 for CI consumers. `--fail-on-warning` makes advisory findings fail CI; notes do not fail it. `--json` and `--sarif` are mutually exclusive.
+- `--sarif`: SARIF 2.1.0 for CI consumers. `--fail-on-warning` makes advisory findings fail CI; notes do not fail it. Choose one of `--json`, `--sarif`, `--markdown` or `--ndjson`.
 
 ## Validation and limits
 
-`npm run check` runs behavior tests and an offline release smoke test. It audits a good fixture, reproduces an omitted patch, checks that the audit does not run lifecycle scripts, then packs and installs the auditor into an isolated temporary directory. The installed CLI must produce JSON, SARIF and Markdown reports. CI covers Node 22/24 on Windows and Linux; dependencies must already be in npm's cache (`npm ci` fills it).
+`npm run check` runs behavior tests and an offline release smoke test. It audits a good fixture, reproduces an omitted patch, checks that the audit does not run lifecycle scripts, then packs and installs the auditor into an isolated temporary directory. The installed CLI must produce JSON, SARIF, Markdown and NDJSON reports. CI covers the minimum supported Node 22.17.0 as well as current Node 22/24 on Windows and Linux; dependencies must already be in npm's cache (`npm ci` fills it). Development-only schema validation dependencies are excluded from the isolated installation.
 
 Use `--markdown --output audit.md` to attach a summary to a PR, or `--json --output audit.json` / `--sarif --output audit.sarif` for automation. Reports are atomically written as UTF-8; existing audited inputs are protected from overwrite. The destination directory must exist. Raster icon checks recognize PNG/JPEG/WebP signatures; they do not fully decode images. Pack reports with differing local artifact sizes produce `pack.stale` warnings, not proof that an arbitrary report is authentic.
 
@@ -57,10 +57,22 @@ When installed from a local checkout or tarball, these public ESM entry points a
 ```js
 import { audit } from '@yokipan77/dsh-package-audit'
 import { auditWorkspace } from '@yokipan77/dsh-package-audit/workspace'
-import { toSarif, toMarkdown, toText } from '@yokipan77/dsh-package-audit/reports'
+import { toSarif, toMarkdown, toText, toNDJSON } from '@yokipan77/dsh-package-audit/reports'
 
 const report = audit('/path/to/plugin', { nodeVersion: '22.17.0' })
 console.log(toMarkdown(report))
 ```
 
 Library calls return reports without setting process exit codes or writing report files. The release smoke test checks both CLI and public API imports from the isolated, installed tarball.
+
+## Publication metadata and pipeline integration
+
+`--publish-check` opts into npm publication metadata checks: `private`, `publishConfig.access/tag/registry` and script declaration shapes. Private workspace packages remain valid for ordinary local audits. Lifecycle script names are reported as notes; script bodies are never run or included in findings. This check does not contact a registry, verify ownership, or determine whether a version is already published.
+
+`--platform linux --arch arm64` checks npm `os`/`cpu` declarations, including exclusions such as `!win32`, using [npm-install-checks](https://github.com/npm/npm-install-checks). The platform target also checks `dsh.bundle.platforms`. Unspecified dimensions are not inferred from the auditor's machine; `libc` and native binary compatibility are outside this check. API equivalents are `{ platform: 'linux', arch: 'arm64', publishCheck: true }`.
+
+`--packlist -` reads an existing UTF-8 npm pack report from standard input, bounded to 8 MiB. For example, `node bin/audit.mjs ../plugin --packlist - --json < ../pack.json` in a POSIX shell or cmd.exe; PowerShell users can use `Get-Content -Raw -Encoding utf8 ../pack.json | node bin/audit.mjs ../plugin --packlist - --json`. The API can receive the same JSON text as `packlistContent`.
+
+`--ndjson` emits one JSON object per line. A single-package audit produces a `type: "package"` record containing the complete package report. A workspace emits a `type: "workspace"` summary with `packageCount`, followed by package records in deterministic path order. Newlines inside strings remain escaped. Audit results are collected before serialization; this mode does not stream the filesystem scan. Like JSON, records include absolute local roots.
+
+Standard `--json` reports use `schemaVersion: 1`. The Draft 7 schema at [`schemas/report-v1.schema.json`](schemas/report-v1.schema.json) covers successful and failed package/workspace reports, including nullable package names. Consumers can import it with `import schema from '@yokipan77/dsh-package-audit/schema' with { type: 'json' }`. The schema describes the standard JSON report, not SARIF or the NDJSON record wrappers.
