@@ -2,13 +2,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 export function checkPacklist({ root, manifest, references, add }, packlist, options = {}) {
-  if (!packlist) {
+  if (!packlist && options.packlistContent === undefined) {
     if (options.maxUnpackedSize !== undefined) add('pack.budget.report', 'A size budget requires a pack report with per-file sizes.')
     return
   }
   try {
-    if (fs.statSync(packlist).size > 8 * 1024 * 1024) throw new Error('Pack report exceeds 8 MiB.')
-    const reports = JSON.parse(fs.readFileSync(packlist, 'utf8').replace(/^\uFEFF/, ''))
+    let content = options.packlistContent
+    if (content === undefined) {
+      if (fs.statSync(packlist).size > 8 * 1024 * 1024) throw new Error('Pack report exceeds 8 MiB.')
+      content = fs.readFileSync(packlist, 'utf8')
+    }
+    if (typeof content !== 'string' || Buffer.byteLength(content) > 8 * 1024 * 1024) throw new Error('Pack report must be UTF-8 JSON text of at most 8 MiB.')
+    const reports = JSON.parse(content.replace(/^\uFEFF/, ''))
     if (!Array.isArray(reports)) throw new Error('Expected the JSON array returned by npm pack --dry-run --json --ignore-scripts.')
     const matching = reports.filter(row => row?.name === manifest.name && row?.version === manifest.version)
     if (matching.length !== 1) throw new Error('Pack report must contain exactly one entry with the audited package name and version. Regenerate it from this checkout.')
