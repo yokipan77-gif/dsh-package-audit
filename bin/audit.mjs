@@ -6,6 +6,7 @@ import { allFindings, toSarif } from '../src/sarif.mjs'
 import { toText, writeReport } from '../src/output.mjs'
 import { toMarkdown } from '../src/markdown.mjs'
 import { readBounded } from '../src/stdin.mjs'
+import { toNDJSON } from '../src/ndjson.mjs'
 
 let options
 try { options = parseArgs(process.argv.slice(2)) } catch (error) {
@@ -23,7 +24,7 @@ if (options.packlist === '-') {
   }
 }
 const report = (options.workspace ? auditWorkspace : audit)(options.directory, options)
-const rendered = options.sarif ? JSON.stringify(toSarif(report), null, 2) : options.json ? JSON.stringify(report, null, 2) : options.markdown ? toMarkdown(report) : toText(report)
+const rendered = options.sarif ? JSON.stringify(toSarif(report), null, 2) : options.json ? JSON.stringify(report, null, 2) : options.markdown ? toMarkdown(report) : options.ndjson ? toNDJSON(report) : toText(report)
 try {
   if (options.output) writeReport(options.output, rendered, report, options.packlist === '-' ? undefined : options.packlist)
   else console.log(rendered)

@@ -13,6 +13,7 @@ export function parseArgs(args) {
       else if (arg === '--include-root') options.includeRoot = true
       else if (arg === '--sarif') options.sarif = true
       else if (arg === '--markdown') options.markdown = true
+      else if (arg === '--ndjson') options.ndjson = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
       else if (arg === '--publish-check') options.publishCheck = true
       else if (['--packlist', '--dsh-version', '--node-version', '--platform', '--arch', '--output', '--max-unpacked-size'].includes(arg)) {
@@ -26,7 +27,7 @@ export function parseArgs(args) {
       directorySeen = true
     }
   }
-  if ([options.json, options.sarif, options.markdown].filter(Boolean).length > 1) throw new Error('Choose one of --json, --sarif or --markdown')
+  if ([options.json, options.sarif, options.markdown, options.ndjson].filter(Boolean).length > 1) throw new Error('Choose one of --json, --sarif, --markdown or --ndjson')
   if (options.includeRoot && !options.workspace) throw new Error('--include-root requires --workspace')
   if (options.maxUnpackedSize !== undefined) {
     if (!/^(0|[1-9]\d*)$/u.test(options.maxUnpackedSize) || !Number.isSafeInteger(Number(options.maxUnpackedSize))) throw new Error('--max-unpacked-size requires a non-negative integer byte count')

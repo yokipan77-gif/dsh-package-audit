@@ -78,7 +78,7 @@ try {
   manifest.files = ['index.mjs', 'assets', 'cordis.patch.yml']
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   const installedCli = path.join(installedRoot, 'node_modules', '@yokipan77', 'dsh-package-audit', 'bin', 'audit.mjs')
-  for (const format of ['--json', '--sarif', '--markdown']) {
+  for (const format of ['--json', '--sarif', '--markdown', '--ndjson']) {
     const output = path.join(temporary, `installed-${format.slice(2)}.txt`)
     const result = spawnSync(process.execPath, [installedCli, sample, format, '--output', output], { encoding: 'utf8', timeout: 10_000 })
     assert.equal(result.status, 0, result.stderr)
@@ -86,6 +86,7 @@ try {
     if (format === '--json') assert.equal(JSON.parse(text).ok, true)
     if (format === '--sarif') assert.equal(JSON.parse(text).version, '2.1.0')
     if (format === '--markdown') assert.ok(text.includes('No findings.'))
+    if (format === '--ndjson') assert.equal(JSON.parse(text).type, 'package')
   }
   manifest.workspaces = ['.']
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
@@ -93,13 +94,16 @@ try {
     import assert from 'node:assert/strict'
     import { audit } from '@yokipan77/dsh-package-audit'
     import { auditWorkspace } from '@yokipan77/dsh-package-audit/workspace'
-    import { toSarif, toMarkdown, toText } from '@yokipan77/dsh-package-audit/reports'
+    import { toSarif, toMarkdown, toText, toNDJSON } from '@yokipan77/dsh-package-audit/reports'
+    import schema from '@yokipan77/dsh-package-audit/schema' with { type: 'json' }
     const report = audit(process.argv[1])
     assert.equal(report.ok, true)
     assert.equal(auditWorkspace(process.argv[1]).ok, true)
     assert.equal(toSarif(report).version, '2.1.0')
     assert.ok(toMarkdown(report).includes('No findings.'))
     assert.ok(toText(report).startsWith('PASS'))
+    assert.equal(JSON.parse(toNDJSON(report)).ok, true)
+    assert.equal(schema.definitions.package.properties.schemaVersion.const, 1)
   `
   const library = spawnSync(process.execPath, ['--input-type=module', '--eval', libraryProbe, sample], {
     cwd: installedRoot, encoding: 'utf8', timeout: 10_000,
