@@ -12,6 +12,7 @@ import { checkScreenshots } from './screenshots.mjs'
 import { checkPublishing } from './publishing.mjs'
 import { checkNpmPlatform } from './platform.mjs'
 import { checkImports } from './imports.mjs'
+import { checkTypeVersions } from './type-versions.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -71,6 +72,7 @@ export function audit(directory, options = {}) {
   checkPatches({ manifest, checkFile, add })
   checkEntries({ root, manifest, checkFile, add })
   checkImports({ root, manifest, checkFile, add })
+  checkTypeVersions({ root, manifest, checkFile, add })
   checkBrowser({ manifest, checkFile, add })
   checkScreenshots({ root, checkFile, add })
   checkIcon({ manifest, checkFile, add })
