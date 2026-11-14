@@ -45,7 +45,8 @@
         "root": { "type": "string" },
         "ok": { "type": "boolean" },
         "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
-        "packages": { "type": "array", "items": { "$ref": "#/definitions/package" } }
+        "packages": { "type": "array", "items": { "$ref": "#/definitions/package" } },
+        "references": { "type": "array", "items": { "$ref": "#/definitions/reference" } }
       },
       "additionalProperties": false
     }

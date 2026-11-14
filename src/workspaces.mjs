@@ -8,6 +8,7 @@ import { parseDocument } from 'yaml'
 export function auditWorkspace(directory, options = {}) {
   let root = path.resolve(directory)
   const packages = []
+  const references = []
   const findings = []
   const fail = (message, file = 'package.json') => findings.push({ code: 'workspace.config', severity: 'error', file, message })
   try {
@@ -47,6 +48,7 @@ export function auditWorkspace(directory, options = {}) {
       for (const file of matches.sort()) {
         try {
           const resolved = packageFile(root, file).absolute
+          references.push({ file: file.split(path.sep).join('/'), field: 'workspaces', packed: false })
           const memberRoot = fs.realpathSync(path.dirname(path.join(root, file)))
           if (seen.has(memberRoot)) continue
           seen.add(memberRoot)
@@ -68,5 +70,5 @@ export function auditWorkspace(directory, options = {}) {
     if (!packages.length) fail('No DSH packages were found in the declared workspaces. Check the patterns and dsh declarations.')
   } catch (error) { fail(error.message) }
   packages.sort((a, b) => a.root < b.root ? -1 : a.root > b.root ? 1 : 0)
-  return { schemaVersion: 1, root, ok: !findings.length && packages.every(p => p.ok), findings, packages }
+  return { schemaVersion: 1, root, ok: !findings.length && packages.every(p => p.ok), findings, references, packages }
 }
