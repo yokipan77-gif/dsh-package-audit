@@ -1,6 +1,6 @@
 import { checkExportPattern } from './export-patterns.mjs'
 import { exportPath } from './export-targets.mjs'
-import { checkExportMap } from './export-maps.mjs'
+import { checkExportMap, EXPORT_MAX_DEPTH } from './export-maps.mjs'
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
 export function checkEntries({ root, manifest, checkFile, add }) {
@@ -11,7 +11,8 @@ export function checkEntries({ root, manifest, checkFile, add }) {
   if (manifest.bin !== undefined && typeof manifest.bin !== 'string' && !object(manifest.bin)) add('entry.bin', 'bin must be a file path or command-to-path object.')
   for (const bin of bins) checkFile(bin, 'bin')
 
-  function visit(value, field, pattern = false) {
+  function visit(value, field, pattern = false, depth = 0) {
+    if (depth > EXPORT_MAX_DEPTH) return // Structural validation already reports the limit.
     if (value === null) return // Explicitly blocked export.
     if (typeof value === 'string') {
       let target
@@ -24,7 +25,7 @@ export function checkEntries({ root, manifest, checkFile, add }) {
       // since a later condition/target can still be valid at runtime.
       add('entry.fallback', `${field}: fallback arrays need runtime resolution; static audit does not choose a target.`, 'package.json', 'note')
     } else if (object(value)) {
-      for (const [key, target] of Object.entries(value)) visit(target, `${field}.${key}`, key.startsWith('.') ? key.includes('*') : pattern)
+      for (const [key, target] of Object.entries(value)) visit(target, `${field}.${key}`, key.startsWith('.') ? key.includes('*') : pattern, depth + 1)
     } else add('entry.export', `${field} must contain export paths, conditions, arrays or null.`)
   }
   if (manifest.exports !== undefined) {

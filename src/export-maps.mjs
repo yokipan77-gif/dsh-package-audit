@@ -1,8 +1,13 @@
 import { exportPath } from './export-targets.mjs'
 
-export function checkExportMap(value, add, top = true, field = 'exports') {
+export const EXPORT_MAX_DEPTH = 64
+export function checkExportMap(value, add, top = true, field = 'exports', depth = 0) {
+  if (depth > EXPORT_MAX_DEPTH) {
+    add('entry.depth', `Export declarations exceed the ${EXPORT_MAX_DEPTH}-level static analysis limit.`)
+    return
+  }
   if (Array.isArray(value)) {
-    for (const target of value) checkExportMap(target, add, false, field)
+    for (const target of value) checkExportMap(target, add, false, field, depth + 1)
     return
   }
   if (value === null || typeof value !== 'object') return
@@ -18,6 +23,6 @@ export function checkExportMap(value, add, top = true, field = 'exports') {
     } else if (!key || (/^(0|[1-9]\d*)$/u.test(key) && Number(key) < 4294967295)) {
       add('entry.condition', `${field} has an empty or integer condition key. Use named conditions such as import, require or default.`)
     }
-    checkExportMap(value[key], add, false, `${field}.${key}`)
+    checkExportMap(value[key], add, false, `${field}.${key}`, depth + 1)
   }
 }
