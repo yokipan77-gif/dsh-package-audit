@@ -16,9 +16,9 @@ export function parseArgs(args) {
       else if (arg === '--ndjson') options.ndjson = true
       else if (arg === '--fail-on-warning') options.failOnWarning = true
       else if (arg === '--publish-check') options.publishCheck = true
-      else if (['--packlist', '--dsh-version', '--node-version', '--platform', '--arch', '--output', '--max-unpacked-size'].includes(arg)) {
+      else if (['--packlist', '--dsh-version', '--node-version', '--platform', '--arch', '--libc', '--output', '--max-unpacked-size'].includes(arg)) {
         if (!args[i + 1] || (args[i + 1].startsWith('-') && !(arg === '--packlist' && args[i + 1] === '-'))) throw new Error(`${arg} requires a value`)
-        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--node-version': 'nodeVersion', '--platform': 'platform', '--arch': 'arch', '--output': 'output', '--max-unpacked-size': 'maxUnpackedSize' }[arg]
+        const key = { '--packlist': 'packlist', '--dsh-version': 'dshVersion', '--node-version': 'nodeVersion', '--platform': 'platform', '--arch': 'arch', '--libc': 'libc', '--output': 'output', '--max-unpacked-size': 'maxUnpackedSize' }[arg]
         options[key] = args[++i]
       } else throw new Error(`Unknown option ${arg}`)
     } else {
@@ -29,6 +29,7 @@ export function parseArgs(args) {
   }
   if ([options.json, options.sarif, options.markdown, options.ndjson].filter(Boolean).length > 1) throw new Error('Choose one of --json, --sarif, --markdown or --ndjson')
   if (options.includeRoot && !options.workspace) throw new Error('--include-root requires --workspace')
+  if (options.libc !== undefined && options.platform !== 'linux') throw new Error('--libc requires --platform linux')
   if (options.maxUnpackedSize !== undefined) {
     if (!/^(0|[1-9]\d*)$/u.test(options.maxUnpackedSize) || !Number.isSafeInteger(Number(options.maxUnpackedSize))) throw new Error('--max-unpacked-size requires a non-negative integer byte count')
     options.maxUnpackedSize = Number(options.maxUnpackedSize)

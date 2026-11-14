@@ -30,3 +30,20 @@ test('reports malformed platform declarations without guessing host compatibilit
   assert.ok(result.findings.some(f => f.code === 'compat.cpu.declaration'))
   assert.equal(result.findings.some(f => ['compat.os', 'compat.cpu'].includes(f.code)), false)
 })
+
+test('evaluates libc explicitly for Linux without using the auditors host libc', t => {
+  const { root } = fixture(t, { os: ['linux'], libc: ['glibc', '!musl'] })
+  assert.equal(audit(root).ok, true)
+  assert.equal(audit(root, { platform: 'linux' }).ok, true)
+  assert.equal(audit(root, { platform: 'linux', libc: 'glibc' }).ok, true)
+  assert.ok(audit(root, { platform: 'linux', libc: 'musl' }).findings.some(f => f.code === 'compat.libc'))
+  assert.ok(audit(root, { libc: 'glibc' }).findings.some(f => f.code === 'compat.libc.target'))
+  assert.throws(() => parseArgs(['--libc', 'musl']), /requires --platform linux/u)
+  assert.throws(() => parseArgs(['--platform', 'win32', '--libc', 'musl']), /requires --platform linux/u)
+  assert.equal(parseArgs(['--platform', 'linux', '--libc', 'musl']).libc, 'musl')
+})
+
+test('reports malformed libc declarations even without a target', t => {
+  const { root } = fixture(t, { libc: [null] })
+  assert.ok(audit(root).findings.some(f => f.code === 'compat.libc.declaration'))
+})
