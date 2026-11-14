@@ -32,7 +32,7 @@ export function auditWorkspace(directory, options = {}) {
     if (!Array.isArray(patterns) || (!patterns.length && !pnpm) || patterns.some(p => {
       if (typeof p !== 'string') return true
       const target = p.startsWith('!') ? p.slice(1) : p
-      return !target.trim() || target.includes('..') || /^[\\/!]|^[a-z][a-z\d+.-]*:/iu.test(target)
+      return !target.trim() || target.replaceAll('\\', '/').split('/').includes('..') || /^[\\/!]|^[a-z][a-z\d+.-]*:/iu.test(target)
     })) {
       throw new Error('Declare non-empty workspace path patterns inside this repository; parent paths and absolute paths are not supported.')
     }
