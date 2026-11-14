@@ -39,7 +39,7 @@ export function auditWorkspace(directory, options = {}) {
     const includes = patterns.filter(p => !p.startsWith('!'))
     const exclusions = patterns.filter(p => p.startsWith('!')).map(p => p.slice(1).replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json')
     if (!includes.length && !pnpm) throw new Error('Workspace patterns must include at least one positive path pattern.')
-    const seen = new Set(pnpm || options.includeRoot ? [rootFile] : [])
+    const seen = new Set(pnpm || options.includeRoot ? [root] : [])
     scan: for (const pattern of includes) {
       const matches = fs.globSync(pattern.replaceAll('\\', '/').replace(/\/$/u, '') + '/package.json', {
         cwd: root, exclude: ['**/node_modules/**', '**/.git/**', ...exclusions],
@@ -47,8 +47,9 @@ export function auditWorkspace(directory, options = {}) {
       for (const file of matches.sort()) {
         try {
           const resolved = packageFile(root, file).absolute
-          if (seen.has(resolved)) continue
-          seen.add(resolved)
+          const memberRoot = fs.realpathSync(path.dirname(path.join(root, file)))
+          if (seen.has(memberRoot)) continue
+          seen.add(memberRoot)
           if (seen.size > 2000) {
             fail('Workspace exceeds the 2000-package audit limit.')
             break scan
@@ -56,11 +57,11 @@ export function auditWorkspace(directory, options = {}) {
           if (fs.statSync(resolved).size > 1024 * 1024) throw new Error('Member package.json exceeds 1 MiB.')
           let member
           try { member = JSON.parse(fs.readFileSync(resolved, 'utf8').replace(/^\uFEFF/, '')) } catch {
-            packages.push(audit(path.dirname(resolved), options))
+            packages.push(audit(memberRoot, options))
             continue
           }
           // Invalid manifests must reach validation, not the ordinary-library filter.
-          if (!isObject(member) || member.dsh !== undefined) packages.push(audit(path.dirname(resolved), options))
+          if (!isObject(member) || member.dsh !== undefined) packages.push(audit(memberRoot, options))
         } catch (error) { fail(error.message, file.split(path.sep).join('/')) }
       }
     }
