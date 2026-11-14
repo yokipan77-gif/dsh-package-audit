@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { checkSvg } from './svg.mjs'
 
 const EXTENSIONS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.webp'])
 export const ICON_MAX_BYTES = 256 * 1024
@@ -15,6 +16,7 @@ export function checkIcon({ manifest, checkFile, add }) {
   if (size > ICON_MAX_BYTES) add('icon.size', `Icon is ${size} bytes; DSH accepts at most ${ICON_MAX_BYTES}. Resize or compress it.`, file.relative)
   if (size === 0) add('icon.empty', 'The declared icon is empty. Add image content or remove the declaration.', file.relative)
   const extension = path.extname(file.relative).toLowerCase()
+  if (extension === '.svg' && size > 0 && size <= ICON_MAX_BYTES) checkSvg(file, add)
   if (size > 0 && ['.png', '.jpg', '.jpeg', '.webp'].includes(extension)) {
     const header = Buffer.alloc(12)
     const descriptor = fs.openSync(file.absolute, 'r')
