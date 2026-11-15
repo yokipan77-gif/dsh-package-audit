@@ -57,13 +57,23 @@ node bin/audit.mjs ../your-plugin --markdown --output audit.md
 
 `--publish-check` 开启 npm 发布元数据检查，检查 private、publishConfig 的 access/tag/registry 和 scripts 类型。普通审计允许 private 包；发布检查会拒绝它。生命周期脚本只提示名称，不执行、不输出脚本正文；不联网验证注册表权限或版本是否已经存在。
 
-`--platform linux --arch arm64` 检查 npm 的 os/cpu 允许与排除列表，复用 [npm-install-checks](https://github.com/npm/npm-install-checks)；platform 还检查 DSH bundle 平台声明。未指定的维度不推断成本机配置；不检查 libc 或原生二进制兼容性。API 对应 `{ platform: 'linux', arch: 'arm64', publishCheck: true }`。
+`--platform linux --arch arm64 --libc musl` 检查 npm 的 os/cpu/libc 允许与排除列表，复用 [npm-install-checks](https://github.com/npm/npm-install-checks)；platform 还检查 DSH bundle 平台声明。libc 必须配合显式 Linux 目标；未指定的维度不推断成本机配置，不验证原生二进制兼容性。API 对应 `{ platform: 'linux', arch: 'arm64', libc: 'musl', publishCheck: true }`。
 
 `--packlist -` 从标准输入读取已有 UTF-8 JSON，最多 8 MiB。PowerShell 可运行 `Get-Content -Raw -Encoding utf8 ../pack.json | node bin/audit.mjs ../plugin --packlist - --json`。API 也可直接传入 `packlistContent` 文本。
 
 `--ndjson` 每行一个 JSON 对象：单包为 type=package 的完整报告；workspace 先输出含 packageCount 的 type=workspace 汇总，再按稳定路径顺序输出各包。字符串里的换行会转义；先完成审计再序列化，不是边扫描边输出。四种结构化格式互斥，NDJSON 与 JSON 一样包含本机绝对根路径。
 
 普通 JSON 报告版本为 schemaVersion=1；[`schemas/report-v1.schema.json`](schemas/report-v1.schema.json) 提供 Draft 7 校验规则，覆盖成功、失败、workspace 和包名不可用时的 null。安装后可用 `import schema from '@yokipan77/dsh-package-audit/schema' with { type: 'json' }` 导入。该 Schema 不用于 SARIF 或 NDJSON 的外层记录。
+
+Workspace 的 references 也记录扫描过的普通库清单，虽然这些库不参与 DSH 校验，`--output` 仍拒绝覆盖它们。目录链接按真实包目录去重；清单文件链接不会改变包根目录。workspace 名称中的连续点可以使用，但独立的父目录路径段仍被拒绝。
+
+补充检查：
+
+- Node imports 的本地条件入口与通配符文件会进入文件和漏包检查；外部包映射与 fallback 数组只提示未解析，不加载模块。
+- typesVersions 验证编译器版本范围与映射结构，检查明确的声明文件名和通配符产物。多候选、扩展名替换、目录解析仍提示未验证，不选择 TypeScript 编译器版本。
+- exports/imports 最多嵌套 64 层。单次通配符扫描在读取到 20000 个目录条目时达到上限，跳过 .git/node_modules，不把目录当文件，不递归目录链接。此限制不用于 workspace 的 glob 发现。
+- 256 KiB 以内的 SVG 检查 XML 格式与根元素、命名空间；DTD 和自定义实体不解析、不联网获取。它不是 SVG 渲染或内容净化；位图仍仅检查文件头。
+- 使用 npm-package-arg 检查依赖映射、包名、npm specifier 语法和 peer optional 标记。workspace/link/catalog 及文件、Git、远程来源会明确提示未解析；不安装依赖、不验证源是否存在，不在诊断中输出可能带凭据的 specifier 值。
 
 - 不导入插件代码、不执行 `!!js`、不安装插件、不调用模型 API；通过不代表插件安全或能在宿主中正常运行。
 - export 通配符会枚举本地构建文件，fallback 数组仍标为未完成运行时解析。

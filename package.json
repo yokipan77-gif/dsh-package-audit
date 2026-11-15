@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "npm-install-checks": "7.1.2",
+    "npm-package-arg": "12.0.2",
     "saxes": "6.0.0",
     "semver": "7.8.6",
     "validate-npm-package-name": "7.0.0",

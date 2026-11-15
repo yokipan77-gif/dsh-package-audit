@@ -15,6 +15,11 @@ try {
   fs.cpSync(path.join(project, 'examples/minimal'), sample, { recursive: true })
   const manifestPath = path.join(sample, 'package.json')
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+  manifest.imports = { '#entry': './index.mjs' }
+  manifest.typesVersions = { '*': { 'index.d.ts': ['assets/index.d.ts'] } }
+  manifest.dependencies = { semver: '^7.0.0' }
+  manifest.libc = ['glibc']
+  fs.writeFileSync(path.join(sample, 'assets/index.d.ts'), 'export {}')
   manifest.scripts = { prepare: 'node -e "require(\'node:fs\').writeFileSync(\'LIFECYCLE_RAN\',\'unexpected\')"' }
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   assert.equal(audit(sample).ok, true)
@@ -78,6 +83,9 @@ try {
   manifest.files = ['index.mjs', 'assets', 'cordis.patch.yml']
   fs.writeFileSync(manifestPath, JSON.stringify(manifest))
   const installedCli = path.join(installedRoot, 'node_modules', '@yokipan77', 'dsh-package-audit', 'bin', 'audit.mjs')
+  const incompatible = spawnSync(process.execPath, [installedCli, sample, '--platform', 'linux', '--libc', 'musl', '--json'], { encoding: 'utf8', timeout: 10_000 })
+  assert.equal(incompatible.status, 1, incompatible.stderr)
+  assert.ok(JSON.parse(incompatible.stdout).findings.some(f => f.code === 'compat.libc'))
   for (const format of ['--json', '--sarif', '--markdown', '--ndjson']) {
     const output = path.join(temporary, `installed-${format.slice(2)}.txt`)
     const result = spawnSync(process.execPath, [installedCli, sample, format, '--output', output], { encoding: 'utf8', timeout: 10_000 })

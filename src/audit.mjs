@@ -13,6 +13,7 @@ import { checkPublishing } from './publishing.mjs'
 import { checkNpmPlatform } from './platform.mjs'
 import { checkImports } from './imports.mjs'
 import { checkTypeVersions } from './type-versions.mjs'
+import { checkDependencies } from './dependencies.mjs'
 
 export const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -78,6 +79,7 @@ export function audit(directory, options = {}) {
   checkIcon({ manifest, checkFile, add })
   checkCompatibility({ manifest, add }, options)
   checkNpmPlatform({ manifest, add }, options)
+  checkDependencies({ root, manifest, add })
   checkPublishing({ manifest, add }, options)
   checkPacklist({ root, manifest, references, add }, options.packlist, options)
   return { ...finish(root, manifest.name ?? null, findings), references }
