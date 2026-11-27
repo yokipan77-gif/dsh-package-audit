@@ -1,16 +1,6 @@
-<p align="center">
-  <img src="assets/banner.svg" alt="DSH Package Audit Banner" width="100%" />
-</p>
+# DSH Package Audit
 
-<p align="center">
-  <code>v0.1.0</code> · <code>Node.js &gt;= 22.17</code> · <code>JSON / SARIF 2.1.0 / Markdown / NDJSON</code> · <a href="LICENSE">MIT License</a>
-</p>
-
-<p align="center">
-  <a href="README.md">English</a> · <strong>简体中文</strong>
-</p>
-
----
+`v0.1.0` · `Node.js >= 22.17` · `JSON / SARIF 2.1.0 / Markdown / NDJSON` · [MIT License](LICENSE) · [English](README.md)
 
 给 DeepSeek Harness 插件作者使用的**发布前检查工具**。离线读取本地包，找出清单、构建产物和打包内容的问题。它是独立开发者 CLI，不是 DeepSeek 官方工具，也不是可装进 DSH 的 bundle。
 

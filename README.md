@@ -1,16 +1,6 @@
-<p align="center">
-  <img src="assets/banner.svg" alt="DSH Package Audit Banner" width="100%" />
-</p>
+# DSH Package Audit
 
-<p align="center">
-  <code>v0.1.0</code> · <code>Node.js &gt;= 22.17</code> · <code>JSON / SARIF 2.1.0 / Markdown / NDJSON</code> · <a href="LICENSE">MIT License</a>
-</p>
-
-<p align="center">
-  <strong>English</strong> · <a href="README.zh.md">简体中文说明</a>
-</p>
-
----
+`v0.1.0` · `Node.js >= 22.17` · `JSON / SARIF 2.1.0 / Markdown / NDJSON` · [MIT License](LICENSE) · [中文说明](README.zh.md)
 
 Read-only release checks for DeepSeek Harness plugin authors. This is an independent developer CLI, not an official validator or an installable DSH bundle. It does not load plugin code, install plugins or call a model API.
 
